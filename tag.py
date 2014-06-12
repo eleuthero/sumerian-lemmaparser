@@ -73,10 +73,31 @@ def process(line):
                 processWord(None)
         elif 'line' == verb:
             processLine( ' '.join(tokens[1:]) )
+        elif 'tablet' == verb:
+            if len(tokens) > 1:
+                processTablet(tokens[1])
+            else:
+                processTablet(None)
+        elif 'help' == verb:
+            print """Commands:
+          tablet <name>
+              Prints all lines in tablet.
+              ex: tablet P010632
+          word <word>
+              Prints all parts of speech for all words containing <word>.
+              ex: word IGI.DUB.bar
+              ex: word iti
+          line <word> [<word> ...]
+              Prints all parts of speech for all words in line containing words.
+              ex: line sza3-asz-ru-um{ki} ba-hul
+          quit
+          exit
+              Exits Sumerian mini-shell."""
+
         elif 'exit' == verb:
-            exit(0)
+            return False
         elif 'quit' == verb:
-            exit(0)
+            return False
 
         return True
     else:
@@ -122,6 +143,21 @@ def renderLine(attest):
     for word in attest.words:
         renderWord(word)
 
+def processTablet(name):
+    found = False
+
+    if name:
+        for t in TABLETS:
+            attest = TABLETS[t]
+            if attest.name == name:
+                for line in attest.lines:
+                    renderLine(line)
+                    found = True
+        if not found:
+            print "Could not find tablet %s." % name
+    else:
+        print "Please specify a tablet name (Pnnnnnn)."
+            
 # ====
 # Main
 # ====
