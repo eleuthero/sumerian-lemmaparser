@@ -101,4 +101,7 @@ line, the available lemmata will be expanded.  For instance:
 - You can enter ``line`` by itself to get all lemmata for all lines in the corpus, but
 I really wouldn't recommend it.
 
-You can quit the shell by entering ``exit`` or ``quit``.
+- ``tablet <name>``: This will return all lines from the tablet with the specified name.
+The name of the tablet should include the leading P identifier.
+
+- You can quit the shell by entering ``exit`` or ``quit``.
