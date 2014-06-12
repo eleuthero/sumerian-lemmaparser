@@ -104,4 +104,6 @@ I really wouldn't recommend it.
 - ``tablet <name>``: This will return all lines from the tablet with the specified name.
 The name of the tablet should include the leading P identifier.
 
+- ``help``: This will return a brief message displaying all available commands.
+
 - You can quit the shell by entering ``exit`` or ``quit``.
