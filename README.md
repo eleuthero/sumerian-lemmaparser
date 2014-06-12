@@ -58,6 +58,7 @@ Similarly, to return lemmata for the partial name "ab-ba-sag10":
 		ab-ba-sag10#? (2 lemmatized attestations)
 			PN
 			FN
+		...
 
 You can enter ``word`` by itself to get all lemmata for all words in the corpus,
 but I wouldn't recommend it.
@@ -97,7 +98,7 @@ line, the available lemmata will be expanded.  For instance:
 				hulu = destroy
 		...
 
-You can enter ``line`` by itself to get all lemmata for all lines in the corpus, but
+- You can enter ``line`` by itself to get all lemmata for all lines in the corpus, but
 I really wouldn't recommend it.
 
 You can quit the shell by entering ``exit`` or ``quit``.
