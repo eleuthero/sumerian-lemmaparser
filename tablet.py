@@ -54,13 +54,6 @@ class Line:
         self.valid = ( len(words) == len(lemtokensets) )
 
         if self.valid:
-
-            """
-            print "  line: ", words 
-            print "   lem: ", lemtokensets 
-            print
-            """
-
             for i in range(len(words)):
                 word = Word( words[i], lemtokensets[i] )
                 if word.valid:

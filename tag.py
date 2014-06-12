@@ -6,14 +6,24 @@ from sys       import stdin
 from itertools import tee, izip
 from tablet    import *
 
+# Max number of tablets to parse.
+
 MAX_TABLETS = int(sys.argv[1]) if (len(sys.argv) >= 2) else 100000
 
 TABLETS = { }
+
+# Funny pattern for iterating via a pair of elements.
+# (0, 1), (1, 2), (2, 3).  This is useful because we need to peek at
+# the next line during forward iteration to parse the lines in the .atf
+# file efficiently.
 
 def pairwise(iter):
     a, b = tee(iter)
     next(b, None)
     return izip(a, b)
+
+# Parse the tablet corpus file and associate any words with #lem:
+# lemmatizations.
 
 def parse():
     global TABLETS
@@ -112,43 +122,17 @@ def renderLine(attest):
     for word in attest.words:
         renderWord(word)
 
-    
-# ======================
+# ====
+# Main
+# ====
+
+# Parse the .atf to extract lemmatization information from
+# tablets that have it.
 
 stats = parse()
-
 print "Loaded %i of %i tablets:" % stats
 
-"""
-for t in TABLETS:
-    tablet = TABLETS[t]
-    print "\t%s (%i lines)" % ( tablet.name, len(tablet.lines) )
-    for l in tablet.lines:
-        print "\t\t%s (%i words)" % ( l.line, len(l.words) )
-        for w in l.words:
-            print "\t\t\t%s (%i lemma rules)" % ( w.word, len(w.lem.rules) )
-            for r in w.lem.rules:
-                if isinstance(r, LemmaTag):
-                    print "\t\t\t\t%s" % r.tag
-                elif isinstance(r, LemmaRoot):
-                    print "\t\t\t\t%s = %s" % (r.root, r.gloss)
-"""
-
-
-"""
-for w in sorted(WORDS):
-    words = WORDS[w]
-    for word in words:
-        print "\t\t\t%s (%i lemma rules)" % ( word.word, len(word.lem.rules) )
-        for r in word.lem.rules:
-            if isinstance(r, LemmaTag):
-                print "\t\t\t\t%s" % r.tag
-            elif isinstance(r, LemmaRoot):
-                print "\t\t\t\t%s = %s" % (r.root, r.gloss)
-"""
-
-
-
+# Main shell loop.
 
 result = True
 
@@ -159,7 +143,3 @@ while result:
         result = process(line)
     else:
         result = False
-
-
-
-
