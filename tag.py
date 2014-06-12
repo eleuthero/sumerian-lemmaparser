@@ -79,6 +79,7 @@ def process(line):
             else:
                 processTablet(None)
         elif 'help' == verb:
+
             print """Commands:
           tablet <name>
               Prints all lines in tablet.
