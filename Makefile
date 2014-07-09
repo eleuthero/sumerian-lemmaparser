@@ -8,8 +8,9 @@ CORPUS_FILE=cdli_atffull.zip
 
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_NONLEMMA_FILE=./cdli_atffull_nonlemma.atf
+CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
 
-all: $(CORPUS_FILE) $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE)
+all: $(CORPUS_FILE) $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE) $(CORPUS_TAGGED_FILE)
 
 $(CORPUS_FILE):
 	if [ ! -f "$(CORPUS_FILE)" ]; then \
@@ -26,5 +27,9 @@ $(CORPUS_NONLEMMA_FILE):
 	./generate_corpus.py --nonlemma --lang=sux > $(CORPUS_NONLEMMA_FILE)
 	./generate_corpus.py --nonlemma --lang=akk >> $(CORPUS_NONLEMMA_FILE)
 
+$(CORPUS_TAGGED_FILE):
+	./tag_corpus.py --bestlemma --lang=sux > $(CORPUS_TAGGED_FILE)
+	./tag_corpus.py --bestlemma --lang=akk >> $(CORPUS_TAGGED_FILE)
+
 clean:
-	rm -f $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE)
+	rm -f $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE) $(CORPUS_TAGGED_FILE)
