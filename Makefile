@@ -21,15 +21,15 @@ $(CORPUS_FILE):
 
 $(CORPUS_LEMMA_FILE):
 	./generate_corpus.py --lemma --lang=sux > $(CORPUS_LEMMA_FILE)
-	./generate_corpus.py --lemma --lang=akk >> $(CORPUS_LEMMA_FILE)
+	# ./generate_corpus.py --lemma --lang=akk >> $(CORPUS_LEMMA_FILE)
 
 $(CORPUS_NONLEMMA_FILE):
 	./generate_corpus.py --nonlemma --lang=sux > $(CORPUS_NONLEMMA_FILE)
-	./generate_corpus.py --nonlemma --lang=akk >> $(CORPUS_NONLEMMA_FILE)
+	# ./generate_corpus.py --nonlemma --lang=akk >> $(CORPUS_NONLEMMA_FILE)
 
 $(CORPUS_TAGGED_FILE):
-	./tag_corpus.py --bestlemma --lang=sux > $(CORPUS_TAGGED_FILE)
-	./tag_corpus.py --bestlemma --lang=akk >> $(CORPUS_TAGGED_FILE)
+	./tag_corpus.py --nogloss --bestlemma --lang=sux > $(CORPUS_TAGGED_FILE)
+	# ./tag_corpus.py --nogloss --bestlemma --lang=akk >> $(CORPUS_TAGGED_FILE)
 
 clean:
 	rm -f $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE) $(CORPUS_TAGGED_FILE)
