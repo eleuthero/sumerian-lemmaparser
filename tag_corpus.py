@@ -3,6 +3,7 @@
 import argparse
 import operator
 from itertools import tee, izip
+from sys       import stdout
 
 index = { }
 noise = '[]!?#*<>'
@@ -31,6 +32,15 @@ def init_parser():
                         action='store_true',
                         help='Include only the most commonly attested '
                              'lemma for tagged word.')
+
+    parser.add_argument('--bare',
+                        action='store_true',
+                        help='Include only lemmatized lines in output.')
+
+    parser.add_argument('--tagsonly',
+                        action='store_true',
+                        help='Include only POS tags in output; do not ' \
+                             'include the source text.')
 
     return parser.parse_args()
 
@@ -135,10 +145,48 @@ def formatLem(lem, args):
             return 'W'
     return lem
 
+def printWord(word, args):
+
+    if not args.tagsonly:
+        stdout.write(word)
+
+    if word in index:
+        if args.bestlemma:
+
+            # We want to show only the best lemma for this word ...
+
+            bestcount = max([ index[word][lem] \
+                              for lem in index[word] ])
+            bestlem   = [ lem for lem in index[word] \
+                              if bestcount == index[word][lem] ][0]
+
+            stdout.write( '$%s$ ' % formatLem(lem, args) )
+
+        else:
+
+            # Show all lemmata for this word.
+
+            tokens = [ ]
+
+            for lem in index[word]:
+                tokens.append('%s:%i' % (formatLem(lem, args),    # lem
+                                         index[word][lem]))       # count
+
+            stdout.write( '$%s$ ' % ','.join(tokens) )
+
+    else:
+
+        # Word is not lemmatized anywhere in corpus.
+        # Mark with X tag to signify unknown part of speech.
+
+        stdout.write('$X$ ')
+      
 def process(line, args):
 
     if len(line) > 0 and not line[0] in '&$@#':
-        print '<l> ',
+
+        if not args.bare:
+            print '<l> ',
 
         # Skip first word in the line; that's a line number.
 
@@ -147,39 +195,19 @@ def process(line, args):
             # Remove all transliteration noise first.
 
             word = word.translate(None, noise)
+            printWord(word, args)
 
-            if word in index:
-                tokens = [ ]
+        if not args.bare:
+            print '</l>'
+        else:
+            print
 
-                # If we want to show only the best lemma for this word ...
-
-                if args.bestlemma:
-                    bestcount = max([ index[word][lem] \
-                                      for lem in index[word] ])
-                    bestlem   = [ lem for lem in index[word] \
-                                  if bestcount == index[word][lem] ][0]
-                    print '%s$%s$ ' % (word,
-                                       formatLem(bestlem, args)),
-
-                # Show all lemmata for this word.
-
-                else:
-                    for lem in index[word]:
-                        tokens.append('%s:%i' % (formatLem(lem, args),
-                                                 index[word][lem]))
-                    print '%s$%s$ ' % (word, ','.join(tokens)),
-            else:
-
-                # Word not in index.  Mark as unknown.
-
-                print '%s$X$ ' % word,
-
-        print '</l>'
     else:
 
-        # Entire line is a comment.
+        # Entire line is a comment or directive.
 
-        print line
+        if not args.bare:
+            print line
 
 def parse(args):
 
