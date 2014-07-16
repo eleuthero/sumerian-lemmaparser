@@ -10,8 +10,10 @@ CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_NONLEMMA_FILE=./cdli_atffull_nonlemma.atf
 CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
+CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 
-all: $(CORPUS_FILE) $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE) $(CORPUS_TAGGED_FILE) $(CORPUS_LINETAGFREQ_FILE)
+all: $(CORPUS_FILE) $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE) $(CORPUS_TAGGED_FILE) \
+	$(CORPUS_LINETAGFREQ_FILE) $(CORPUS_PATTERN_FILE)
 
 $(CORPUS_FILE):
 	if [ ! -f "$(CORPUS_FILE)" ]; then \
@@ -34,7 +36,15 @@ $(CORPUS_TAGGED_FILE):
 
 $(CORPUS_LINETAGFREQ_FILE):
 	./tag_corpus.py --bestlemma --lang=sux --tagsonly --bare \
+                | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
 		| sort | uniq -c | sort -rn > $(CORPUS_LINETAGFREQ_FILE)
+
+$(CORPUS_PATTERN_FILE):
+	./tag_corpus.py --bestlemma --lang=sux --tagsonly \
+                | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' > $(CORPUS_PATTERN_FILE)
+	./patterns.py --lang=sux --threshold1=2500 --threshold2=500 > ./temp
+	mv ./temp $(CORPUS_PATTERN_FILE)
 
 clean:
 	rm -f $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE) $(CORPUS_TAGGED_FILE) $(CORPUS_LINETAGFREQ_FILE)
+	rm -f $(CORPUS_PATTERN_FILE)
