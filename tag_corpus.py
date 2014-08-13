@@ -2,6 +2,7 @@
 
 import argparse
 import operator
+import random
 from itertools import tee, izip
 from sys       import stdout
 
@@ -77,9 +78,9 @@ def init_parser():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-n', '--count',
-                        type=int, default=100000,
-                        help='Maximum number of tablets in '
+    parser.add_argument('-p', '--percent',
+                        type=int, default=100, choices=range(1, 100),
+                        help='Percent of qualifying tablets to include in '
                              'generated corpus.')
 
     parser.add_argument('--lang',
@@ -285,20 +286,9 @@ def process(line, args):
 
 def parse(args):
 
-    """
-    args:
-      count:      maximum number of tablets returned.
-      lang:       language of tablets to include.
-      bestlemma:  include only the most commonly attested lemma for
-                  tagged word.
-      nogloss:    suppress gloss for translations like "udu[sheep]" and
-                  replace with a W tag.
-    """
-
     lemma = False
     lines = [ ]
     valid = True
-    count = args.count
 
     with open('./cdli_atffull.atf') as fin:
         for line1, line2 in pairwise(fin):
@@ -341,13 +331,8 @@ def parse(args):
 
                 if valid:
                     for line in lines:
-                        process(line, args)
-
-                    # Stop if we've generated enough output.
-
-                    count -= 1
-                    if 0 == count:
-                       return
+                        if random.randint(1, 100) <= args.percent:
+                            process(line, args)
 
                     # Restart accumulated lines.
 

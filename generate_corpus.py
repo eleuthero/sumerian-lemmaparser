@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import argparse
+import random
 from itertools import tee, izip
 
 from tablet import *
@@ -11,9 +12,10 @@ def init_parser():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-n', '--count',
-                        type=int, default=100000,
-                        help='Maximum number of tablets in generated corpus.')
+    parser.add_argument('-p', '--percent',
+                        type=int, default=100, choices=range(1, 100),
+                        help='Percent of qualifying tablets to include in '
+                             'generated corpus.')
 
     parser.add_argument('--lang',
                         default='sux',
@@ -47,14 +49,8 @@ def pairwise(iter):
 
 def parse(args):
 
-    # lemmatized: if True, only tablets with one or more lemmata are returned.
-    #             if False, only tablets with no lemmata are returned.
-    #             if None, all tablets are returned, regardless of lemmata.
-    # count:      maximum number of tablets returned.
-
     lemma = False
     lines = [ ]
-    count = args.count
     valid = True
 
     with open('./cdli_atffull.atf') as fin:
@@ -81,12 +77,9 @@ def parse(args):
             if line2.startswith('&'):
                 if (lemma and args.lemma) or (not lemma and args.nonlemma):
                     if valid:
-                        for line in lines:
-                            print line
-
-                        count -= 1
-                        if 0 == count:
-                            return
+                        if random.randint(1, 100) <= args.percent:
+                            for line in lines:
+                                print line
 
                 lines = [ ]
                 lemma = False

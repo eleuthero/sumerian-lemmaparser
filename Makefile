@@ -31,7 +31,8 @@ $(CORPUS_NONLEMMA_FILE):
 	# ./generate_corpus.py --nonlemma --lang=akk >> $(CORPUS_NONLEMMA_FILE)
 
 $(CORPUS_TAGGED_FILE):
-	./tag_corpus.py --nogloss --bestlemma --pf --lang=sux > $(CORPUS_TAGGED_FILE)
+	./tag_corpus.py --bestlemma --pf --lang=sux > $(CORPUS_TAGGED_FILE)
+	# ./tag_corpus.py --nogloss --bestlemma --pf --lang=sux > $(CORPUS_TAGGED_FILE)
 	# ./tag_corpus.py --nogloss --bestlemma --pf --lang=akk >> $(CORPUS_TAGGED_FILE)
 
 $(CORPUS_LINETAGFREQ_FILE):
