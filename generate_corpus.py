@@ -50,8 +50,8 @@ def pairwise(iter):
 def parse(args):
 
     lemma = False
+    valid = False 
     lines = [ ]
-    valid = True
 
     with open('./cdli_atffull.atf') as fin:
         for line1, line2 in pairwise(fin):
@@ -59,13 +59,13 @@ def parse(args):
             line2 = line2.strip()
             if line1.startswith('&'):
                 lemma = False
-                valid = True 
+                valid = False 
                 lines = [ ]
                 lines.append(line1)
             elif line1.startswith('#atf') and 'lang' in line1:
                 lines.append(line1)
-                if not line1.endswith(args.lang):
-                    valid = False
+                if line1.endswith(args.lang):
+                    valid = True 
             else:
                 if line1.startswith('#lem:'):
                     lemma = True
@@ -80,10 +80,10 @@ def parse(args):
                         if random.randint(1, 100) <= args.percent:
                             for line in lines:
                                 print line
-
-                lines = [ ]
                 lemma = False
-                valid = True 
+                valid = False 
+                lines = [ ]
+
 # ====
 # Main
 # ====

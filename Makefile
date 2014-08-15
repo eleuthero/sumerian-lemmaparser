@@ -9,6 +9,7 @@ CORPUS_FILE=cdli_atffull.zip
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_NONLEMMA_FILE=./cdli_atffull_nonlemma.atf
 CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
+CORPUS_TAGGED_PERCENT=10
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 
@@ -31,9 +32,8 @@ $(CORPUS_NONLEMMA_FILE):
 	# ./generate_corpus.py --nonlemma --lang=akk >> $(CORPUS_NONLEMMA_FILE)
 
 $(CORPUS_TAGGED_FILE):
-	./tag_corpus.py --bestlemma --pf --lang=sux > $(CORPUS_TAGGED_FILE)
-	# ./tag_corpus.py --nogloss --bestlemma --pf --lang=sux > $(CORPUS_TAGGED_FILE)
-	# ./tag_corpus.py --nogloss --bestlemma --pf --lang=akk >> $(CORPUS_TAGGED_FILE)
+	./tag_corpus.py --nogloss --bestlemma --pf --percent $(CORPUS_TAGGED_PERCENT) --lang=sux > $(CORPUS_TAGGED_FILE)
+	# ./tag_corpus.py --nogloss --bestlemma --pf --percent $(CORPUS_TAGGED_PERCENT) --lang=akk >> $(CORPUS_TAGGED_FILE)
 
 $(CORPUS_LINETAGFREQ_FILE):
 	./tag_corpus.py --bestlemma --pf --lang=sux --tagsonly --bare \
