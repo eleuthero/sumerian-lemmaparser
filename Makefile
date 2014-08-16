@@ -35,14 +35,14 @@ $(CORPUS_TAGGED_FILE):
 	./tag_corpus.py --nogloss --bestlemma --pf > $(CORPUS_TAGGED_FILE)
 
 $(CORPUS_LINETAGFREQ_FILE):
-	./tag_corpus.py --bestlemma --pf --lang sux --tagsonly --bare \
+	./tag_corpus.py --bestlemma --pf --tagsonly --bare \
                 | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
 		| sort | uniq -c | sort -rn > $(CORPUS_LINETAGFREQ_FILE)
 
 $(CORPUS_PATTERN_FILE):
-	./tag_corpus.py --bestlemma --lang sux --pf --tagsonly \
+	./tag_corpus.py --bestlemma --pf --tagsonly \
                 | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' > $(CORPUS_PATTERN_FILE)
-	./patterns.py --lang sux --threshold1 2500 --threshold2 500 > ./temp
+	./patterns.py --threshold1 2500 --threshold2 500 > ./temp
 	mv ./temp $(CORPUS_PATTERN_FILE)
 
 clean:

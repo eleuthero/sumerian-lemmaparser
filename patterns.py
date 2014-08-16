@@ -13,10 +13,6 @@ def init_parser():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--lang',
-                        default='sux',
-                        help='Language of texts to include.')
-
     parser.add_argument('-t1', '--threshold1',
                         type=int, default=10000,
                         help='Minimum number of attestations required for '
@@ -70,14 +66,8 @@ def index(p, n):
 
 def buildIndex(args):
 
-    """
-    args:
-        lang:     language of tablets to include.
-    """
-
     with open('./cdli_atffull_patterns.txt') as fin:
         p_prev = None
-        indexing = True
         for line1, line2 in pairwise(fin):
             line1 = line1.strip()
             line2 = line2.strip()
@@ -87,17 +77,9 @@ def buildIndex(args):
                 # Either end of file or end of tablet.
                 # Previous pattern is followed by None.
 
-                if indexing:
-                    if p_prev:
-                        index(p_prev, None)
+                if p_prev:
+                    index(p_prev, None)
                 p_prev = None
-
-            elif line2.startswith('#atf') and 'lang' in line2:
-
-                # Check to see whether this tablet is in the
-                # desired language.  Toggle the indexing flag.
-
-                indexing = line2.endswith(args.lang)
 
             elif line2.startswith('<l>'):
 
@@ -108,8 +90,7 @@ def buildIndex(args):
                 # p_prev may be None.  That's good; it'll tell us
                 # which lines start tablets (i.e. follow None).
 
-                if indexing:
-                    index(p_prev, p_curr)
+                index(p_prev, p_curr)
                 p_prev = p_curr
   
 def process(args):

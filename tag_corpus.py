@@ -322,7 +322,7 @@ def process(line, args):
                 printWord(word, args)
 
             if not args.bare:
-                stdout.write('</l>\n')
+                stdout.write('</l>')
 
     else:
 
@@ -330,7 +330,8 @@ def process(line, args):
 
         if not args.bare:
             stdout.write(line)
-            stdout.write('\n')
+
+    stdout.write('\n')
 
 def parse(args):
 
