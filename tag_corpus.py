@@ -3,10 +3,14 @@
 import argparse
 import operator
 import random
+import re
 from itertools import tee, izip
 from sys       import stdout
 
-index = { }
+# Index dictionary mapping words to their attested parts of speech and
+# the count for each of those POS.  
+
+index = { }              # { 'x': { 'u' : 0 } }
 noise = '[]!?#*<>'
 
 # List of professions.  If the --pf switch is provided, any lemma
@@ -78,15 +82,6 @@ def init_parser():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('-p', '--percent',
-                        type=int, default=100, choices=range(1, 100),
-                        help='Percent of qualifying tablets to include in '
-                             'generated corpus.')
-
-    parser.add_argument('--lang',
-                        default='sux',
-                        help='Language of texts to include.')
-
     parser.add_argument('--nogloss',
                         action='store_true',
                         help='Suppress translation glosses.  Glosses '
@@ -152,7 +147,7 @@ class Line:
                     # print '    %s => %s' % (word, element)
         
 def buildIndex():
-    with open('./cdli_atffull.atf') as fin:
+    with open('./cdli_atffull_lemma.atf') as fin:
         for line1, line2 in pairwise(fin):
             line1 = line1.strip()
             line2 = line2.strip()
@@ -255,42 +250,93 @@ def printWord(word, args):
         # Mark with X tag to signify unknown part of speech.
 
         stdout.write('$X$ ')
-      
+
+def cleanWord(word):
+
+    # Remove all transliteration noise.
+    
+    word = word.translate(None, noise)
+
+    # Replace : and . signs (indiciating sign metathesis) with the normal
+    # hyphen sign separator.  This is not linguistically defensible, but
+    # it's close enough for our immediate purposes.
+
+    word = re.sub('[.:]', '', word)
+
+    return word
+
+def cleanLine(line):
+
+    if '_' in line:
+
+        # _ occurs in lemmata for Akkadian signs; if we see this anywhere
+        # in the line, we need different rules to parse the entire line.
+        # We didn't sign up for that.
+
+        return None
+
+    words = None
+
+    # Skip first word in the line; that's a line number.
+
+    for word in line.split(' ')[1:]:
+        word = cleanWord(word)
+
+        if ('%a' == word) or ('=' == word):
+
+            # This indicates the language has switched (probably to
+            # Akkadian) for the rest of the line.  Stop parsing this
+            # and any following signs in this line.
+
+            break
+
+        elif ('...' == word):
+
+            # [...] indicates the loss of an indeterminate number of
+            # signs.  Reduce this to x, a single lost sign, for our
+            # purposes.
+
+            words = words or list()
+            words.append('x')
+
+        else:
+            words = words or list()
+            words.append(word)
+
+    return words
+
 def process(line, args):
 
     if len(line) > 0 and not line[0] in '&$@#':
 
-        if not args.bare:
-            print '<l> ',
+        # Clean the line up; there are signs that may cause us to stop
+        # processing subsequent signs.
 
-        # Skip first word in the line; that's a line number.
+        line = cleanLine(line)
 
-        for word in line.split(' ')[1:]:
+        if line:
+            if not args.bare:
+                stdout.write('<l> ')
 
-            # Remove all transliteration noise first.
+            for word in line:
+                printWord(word, args)
 
-            word = word.translate(None, noise)
-            printWord(word, args)
-
-        if not args.bare:
-            print '</l>'
-        else:
-            print
+            if not args.bare:
+                stdout.write('</l>\n')
 
     else:
 
         # Entire line is a comment or directive.
 
         if not args.bare:
-            print line
+            stdout.write(line)
+            stdout.write('\n')
 
 def parse(args):
 
-    lemma = False
     lines = [ ]
-    valid = True
 
-    with open('./cdli_atffull.atf') as fin:
+    with open('./cdli_atffull_lemma.atf') as fin:
         for line1, line2 in pairwise(fin):
             line1 = line1.strip()
             line2 = line2.strip()
@@ -301,24 +347,14 @@ def parse(args):
 
                 # Starting a new tablet.  Restart accumulated lines.
 
-                lemma = False
-                valid = True 
                 lines = [ ]
                 lines.append(line1)
 
-            elif line1.startswith('#atf') and 'lang' in line1:
-
-                # Check that language of tablet agrees with args lang.
-
-                lines.append(line1)
-                if not line1.endswith(args.lang):
-                    valid = False
-
             elif line1.startswith('#lem:'):
 
-                # Tablet has at least one lemma.
+                # Lemma.  We've already built the lemmata index; skip this.
 
-                lemma = True
+                pass
 
             else:
                 lines.append(line1)
@@ -329,16 +365,12 @@ def parse(args):
 
                 # Starting a new tablet.  Process accumulated lines.
 
-                if valid:
-                    for line in lines:
-                        if random.randint(1, 100) <= args.percent:
-                            process(line, args)
+                for line in lines:
+                    process(line, args)
 
-                    # Restart accumulated lines.
+                # Restart accumulated lines.
 
-                    lines = [ ]
-                    lemma = False
-                    valid = True 
+                lines = [ ]
 
 # ====
 # Main

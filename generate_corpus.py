@@ -13,7 +13,7 @@ def init_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-p', '--percent',
-                        type=int, default=100, choices=range(1, 100),
+                        type=int, default=100, choices=range(1, 101),
                         help='Percent of qualifying tablets to include in '
                              'generated corpus.')
 
