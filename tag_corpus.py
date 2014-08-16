@@ -13,6 +13,17 @@ from sys       import stdout
 index = { }              # { 'x': { 'u' : 0 } }
 noise = '[]!?#*<>'
 
+# Regular expressions used in massaging transliteration noise in lines.
+
+# Implied signs: <<...>> indicates that the transliterator believes that
+# the scribe has left out one or more signs.  These omitted signs will
+# not appear in the lemmatization and so we need to remove the implied
+# signs.
+
+re_impl = re.compile(r"\<\<([A-Za-z0-9-()/#?*{}|@+ ]+)\>\>") 
+
+re_slash = re.compile(r"(/)[^0-9]")
+
 # List of professions.  If the --pf switch is provided, any lemma
 # with the following roots will be marked with the PF part-of-speech
 # tag.
@@ -125,10 +136,55 @@ class Line:
         self.words = { }
         self.parse(line, lem)
 
+    def clean(self, line, lem):
+
+        # Remove any independent comma tokens.
+
+        line = line.replace(' , ', ' ')
+
+        # Remove commas at the end of the line.
+
+        if line.endswith(','):
+            line = line[:-1]
+
+        # Delete any implied signs <<...>>.
+
+        line = re_impl.sub('', line)
+
+        """
+        # Deal with slashes; they may be either " " or "-".
+        # Note: This has been commented out because the lemmata always
+        # treat "erroneous" slashes as sign separators, even when the
+        # signs are clearly meant to be word-broken, so there must be some
+        # lemmatization rule that is being adhered to that I just don't
+        # understand, as evidenced by the fact that the number of lemma tokens
+        # is always equal to the number of words in the line when there is
+        # a slash present.  We'll treat the slash as a sign separator.
+
+        m = re_slash.search(line)
+
+        if m:
+   
+            words  = [ s.strip().translate(None, '[]!?#*<>') \
+                       for s in line.split()[1:] ]
+            lemtok = [ s.strip()
+                       for s in lem.split(';') ]
+
+            stdout.write("!!! matched bad slash: %i %i %s\n" % \
+                         ( len(words), len(lemtok), line ))
+            # line = re_slash.sub('', line)
+        """
+            
+        return line
+
     def parse(self, line, lem):
+
+        line = self.clean(line, lem)
+
         words  = [ s.strip().translate(None, '[]!?#*<>') \
-                   for s in line.split(' ')[1:] ]
-        lemtok = [ s.strip() for s in  lem.split(';') ]
+                   for s in line.split()[1:] ]
+        lemtok = [ s.strip()
+                   for s in lem.split(';') ]
 
         # Ensure same number of lemma tokens as words.
 
@@ -145,7 +201,7 @@ class Line:
                 for element in tokens.split('|'):
                     self.words[word].append(element)
                     # print '    %s => %s' % (word, element)
-        
+
 def buildIndex():
     with open('./cdli_atffull_lemma.atf') as fin:
         for line1, line2 in pairwise(fin):
