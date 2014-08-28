@@ -10,6 +10,7 @@ CORPUS_PERCENT=100
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_NONLEMMA_FILE=./cdli_atffull_nonlemma.atf
 CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
+CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 
@@ -33,6 +34,12 @@ $(CORPUS_NONLEMMA_FILE):
 
 $(CORPUS_TAGGED_FILE):
 	./tag_corpus.py --nogloss --bestlemma --pf > $(CORPUS_TAGGED_FILE)
+
+$(CORPUS_TAGFREQ_FILE):
+	./tag_corpus.py --nogloss --bestlemma --pf --tagsonly --bare \
+                | sed -e 's/ /\n/g' \
+                | sed -e '/^$$/d' \
+		| sort | uniq -c | sort -rn > $(CORPUS_TAGFREQ_FILE)
 
 $(CORPUS_LINETAGFREQ_FILE):
 	./tag_corpus.py --bestlemma --pf --tagsonly --bare \
