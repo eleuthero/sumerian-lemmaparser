@@ -10,12 +10,13 @@ CORPUS_PERCENT=100
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_NONLEMMA_FILE=./cdli_atffull_nonlemma.atf
 CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
+CORPUS_PREPARED_CORPUS_FILE=./cdli_atffull_prepared.atf
 CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 
 all: $(CORPUS_FILE) $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE) $(CORPUS_TAGGED_FILE) \
-	$(CORPUS_LINETAGFREQ_FILE) $(CORPUS_PATTERN_FILE)
+	$(CORPUS_LINETAGFREQ_FILE) $(CORPUS_PATTERN_FILE) $(CORPUS_PREPARED_CORPUS_FILE)
 
 $(CORPUS_FILE):
 	if [ ! -f "$(CORPUS_FILE)" ]; then \
@@ -34,6 +35,11 @@ $(CORPUS_NONLEMMA_FILE):
 
 $(CORPUS_TAGGED_FILE):
 	./tag_corpus.py --nogloss --bestlemma --pf > $(CORPUS_TAGGED_FILE)
+
+$(CORPUS_PREPARED_CORPUS_FILE): $(CORPUS_TAGGED_FILE)
+	cat $(CORPUS_TAGGED_FILE) \
+		| python ./hide_pos.py --hide 'PN,W,X,u' \
+		> $(CORPUS_PREPARED_CORPUS_FILE)
 
 $(CORPUS_TAGFREQ_FILE):
 	./tag_corpus.py --nogloss --bestlemma --pf --tagsonly --bare \
