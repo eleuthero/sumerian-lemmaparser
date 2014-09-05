@@ -313,6 +313,12 @@ def cleanWord(word):
     
     word = word.translate(None, noise)
 
+    # [...] indicates the loss of an indeterminate number of
+    # signs.  Reduce this to x, a single lost sign, for our
+    # purposes.
+
+    word = re.sub(r'\.\.\.', 'x', word)
+
     # Replace : and . signs (indiciating sign metathesis) with the normal
     # hyphen sign separator.  This is not linguistically defensible, but
     # it's close enough for our immediate purposes.
@@ -346,16 +352,8 @@ def cleanLine(line):
 
             break
 
-        elif ('...' == word):
-
-            # [...] indicates the loss of an indeterminate number of
-            # signs.  Reduce this to x, a single lost sign, for our
-            # purposes.
-
-            words = words or list()
-            words.append('x')
-
         else:
+
             words = words or list()
             words.append(word)
 
