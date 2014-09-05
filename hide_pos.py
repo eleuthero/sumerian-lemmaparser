@@ -8,12 +8,14 @@ from sys import stdout
 # All parts of speech.
 
 ALL_POS = [
-              'W',  # Sumerian-language words with glosses (e.g. ninda == "bread")
+              'W',  # Sumerian-language words with glosses
+                    #     (e.g. ninda == "bread")
               'n',  # Numbers.
               'PN', # Personal names.
               'PF', # [Custom] Professions and titles.
               'X',  # Unknown words.
-              'u',  # Unlemmatizable words. (generally due to sign damage or loss)
+              'u',  # Unlemmatizable words.
+                    #     (generally due to sign damage or loss)
               'GN', # Geographical names. (primarily cities)
               'DN', # Divine names.
               'MN', # Month names.
@@ -26,26 +28,28 @@ ALL_POS = [
               'CN'  # Celestial names.
           ]
 
-# Default list of parts of speech to hide.
+# Default list of parts of speech to grant preknowledge.
 
-HIDE_POS = [ 'PN', 'W', 'X', 'u' ]
+SHOW_POS = [ 'n', 'PF' ] # , 'GN', 'DN', 'MN', 'RN',
+                         # 'FN', 'WN', 'TN', 'ON', 'AN', 'CN' ]
 
 def init_parser():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--hide',
+    parser.add_argument('--preknowledge',
                         type = str,
-                        default = ','.join(HIDE_POS),
+                        default = ','.join(SHOW_POS),
                         # choices = ALL_POS,
-                        help='List of parts of speech to hide.')
+                        help='List of parts of speech for which to grant ' +
+                             'preknowledge.')
 
     return parser.parse_args()
 
 def set_pos_list(args):
-    global HIDE_POS
+    global SHOW_POS
 
-    HIDE_POS = args.hide.split(',')
+    SHOW_POS = args.preknowledge.split(',')
 
 def process_token(token):
     tokens = token.split('$')
@@ -55,9 +59,9 @@ def process_token(token):
 
     word += '*%s*' % pos
 
-    # If we haven't hidden this POS, initially provide it.
+    # If we have preknowledge about this pos, reveal the pos.
 
-    if not pos in HIDE_POS:
+    if pos in SHOW_POS:
         word += '$%s$' % pos
 
     return word
