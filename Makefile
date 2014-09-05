@@ -16,6 +16,7 @@ CORPUS_PREPARED_CORPUS_FILE=./cdli_atffull_prepared.atf
 CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
+CORPUS_PREKNOWLEDGE_FILE=./preknowledge.txt
 
 all: \
 	$(CORPUS_FILE) \
@@ -25,7 +26,8 @@ all: \
 	$(CORPUS_LINETAGFREQ_FILE) \
 	$(CORPUS_PATTERN_FILE) \
 	$(CORPUS_PREPARED_CORPUS_FILE) \
-	CORPUS_STATISTICS
+	CORPUS_STATISTICS \
+	$(CORPUS_PREKNOWLEDGE_FILE)
 
 $(CORPUS_FILE):
 	if [ ! -f "$(CORPUS_FILE)" ]; then \
@@ -190,6 +192,34 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 	sort -k2.1 ./pos_frequency/wn_frequency.txt \
 		> ./pos_frequency/wn_sorted.txt
 
+# Preknowledge
+
+$(CORPUS_PREKNOWLEDGE_FILE): CORPUS_STATISTICS
+	cat ./pos_frequency/fn_frequency.txt \
+		| head -50 \
+		| awk '{ print $$2 "$$FN$$" }' \
+		> $(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat ./pos_frequency/gn_frequency.txt \
+		| head -50 \
+		| awk '{ print $$2 "$$GN$$" }' \
+		>> $(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat ./pos_frequency/mn_frequency.txt \
+		| head -50 \
+		| awk '{ print $$2 "$$MN$$" }' \
+		>> $(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat ./pos_frequency/tn_frequency.txt \
+		| head -20 \
+		| awk '{ print $$2 "$$TN$$" }' \
+		>> $(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat ./pos_frequency/wn_frequency.txt \
+		| head -50 \
+		| awk '{ print $$2 "$$WN$$" }' \
+		>> $(CORPUS_PREKNOWLEDGE_FILE)
+
 clean:
 	rm -f $(CORPUS_LEMMA_FILE)
 	rm -f $(CORPUS_NONLEMMA_FILE)
@@ -199,6 +229,7 @@ clean:
 	rm -f $(CORPUS_TAGFREQ_FILE)
 	rm -f $(CORPUS_LINETAGFREQ_FILE)
 	rm -f $(CORPUS_PATTERN_FILE)
+	rm -f $(CORPUS_PREKNOWLEDGE_FILE)
 	rm -f ./pos_frequency/fn_frequency.txt ./pos_frequency/fn_sorted.txt
 	rm -f ./pos_frequency/gn_frequency.txt ./pos_frequency/gn_sorted.txt
 	rm -f ./pos_frequency/mn_frequency.txt ./pos_frequency/mn_sorted.txt
