@@ -190,4 +190,9 @@ clean:
 	rm -f ./pos_frequency/fn_frequency.txt ./pos_frequency/fn_sorted.txt
 	rm -f ./pos_frequency/gn_frequency.txt ./pos_frequency/gn_sorted.txt
 	rm -f ./pos_frequency/mn_frequency.txt ./pos_frequency/mn_sorted.txt
+	rm -f ./pos_frequency/n_frequency.txt  ./pos_frequency/n_sorted.txt
+	rm -f ./pos_frequency/on_frequency.txt ./pos_frequency/on_sorted.txt
+	rm -f ./pos_frequency/tn_frequency.txt ./pos_frequency/tn_sorted.txt
+	rm -f ./pos_frequency/u_frequency.txt  ./pos_frequency/u_sorted.txt
+	rm -f ./pos_frequency/wn_frequency.txt ./pos_frequency/wn_sorted.txt
 	rmdir ./pos_frequency
