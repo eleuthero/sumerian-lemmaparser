@@ -5,24 +5,33 @@ WGET=/usr/bin/wget
 UNZIP=/usr/bin/unzip
 
 CORPUS_FILE=./cdli_atffull.zip
+CORPUS_FILE_URL= http://www.cdli.ucla.edu/tools/cdlifiles/cdli_atffull.zip
 
 CORPUS_PERCENT=100
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_NONLEMMA_FILE=./cdli_atffull_nonlemma.atf
 CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
-CORPUS_BARETAGGED_FILE=./cdli_atffull_bare.atf
+CORPUS_BARETAGGED_FILE=./pos_frequency/cdli_atffull_bare.atf
 CORPUS_PREPARED_CORPUS_FILE=./cdli_atffull_prepared.atf
 CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 
-all: $(CORPUS_FILE) $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE) $(CORPUS_TAGGED_FILE) $(CORPUS_LINETAGFREQ_FILE) $(CORPUS_PATTERN_FILE) $(CORPUS_PREPARED_CORPUS_FILE) CORPUS_STATISTICS
+all: \
+	$(CORPUS_FILE) \
+	$(CORPUS_LEMMA_FILE) \
+	$(CORPUS_NONLEMMA_FILE) \
+	$(CORPUS_TAGGED_FILE) \
+	$(CORPUS_LINETAGFREQ_FILE) \
+	$(CORPUS_PATTERN_FILE) \
+	$(CORPUS_PREPARED_CORPUS_FILE) \
+	CORPUS_STATISTICS
 
 $(CORPUS_FILE):
 	if [ ! -f "$(CORPUS_FILE)" ]; then \
 		@echo "Getting full corpus file from CDLI..."; \
-		$(WGET) http://www.cdli.ucla.edu/tools/cdlifiles/cdli_atffull.zip -O $(CORPUS_FILE); \
-		$(UNZIP) ./cdli_atffull.zip; \
+		$(WGET) $(CORPUS_FILE_URL) -O $(CORPUS_FILE); \
+		$(UNZIP) $(CORPUS_FILE); \
 	fi
 
 $(CORPUS_LEMMA_FILE):
@@ -38,10 +47,6 @@ $(CORPUS_NONLEMMA_FILE):
 $(CORPUS_TAGGED_FILE):
 	./tag_corpus.py --nogloss --bestlemma --pf \
 		> $(CORPUS_TAGGED_FILE)
-
-$(CORPUS_BARETAGGED_FILE):
-	./tag_corpus.py --nogloss --bestlemma --pf --bare \
-		> $(CORPUS_BARETAGGED_FILE)
 
 $(CORPUS_PREPARED_CORPUS_FILE): $(CORPUS_TAGGED_FILE)
 	cat $(CORPUS_TAGGED_FILE) \
@@ -72,7 +77,6 @@ $(CORPUS_PATTERN_FILE):
 
 CORPUS_STATISTICS: \
 	$(CORPUS_BARETAGGED_FILE) \
-	./pos_frequency \
 	./pos_frequency/fn_frequency.txt \
 	./pos_frequency/gn_frequency.txt \
 	./pos_frequency/mn_frequency.txt \
@@ -82,6 +86,10 @@ CORPUS_STATISTICS: \
 	./pos_frequency/u_frequency.txt \
 	./pos_frequency/wn_frequency.txt
 		
+$(CORPUS_BARETAGGED_FILE): ./pos_frequency
+	./tag_corpus.py --nogloss --bestlemma --pf --bare \
+		> $(CORPUS_BARETAGGED_FILE)
+
 ./pos_frequency:
 	mkdir ./pos_frequency
 
@@ -183,10 +191,14 @@ CORPUS_STATISTICS: \
 		> ./pos_frequency/wn_sorted.txt
 
 clean:
-	rm -f $(CORPUS_LEMMA_FILE) $(CORPUS_NONLEMMA_FILE)
-	rm -f $(CORPUS_TAGGED_FILE) $(CORPUS_LINETAGFREQ_FILE)
-	rm -f $(CORPUS_BARETAGGED_FILE) $(CORPUS_PREPARED_CORPUS_FILE)
-	rm -f $(CORPUS_PATTERN_FILE) $(CORPUS_TAGFREQ_FILE)
+	rm -f $(CORPUS_LEMMA_FILE)
+	rm -f $(CORPUS_NONLEMMA_FILE)
+	rm -f $(CORPUS_TAGGED_FILE)
+	rm -f $(CORPUS_BARETAGGED_FILE)
+	rm -f $(CORPUS_PREPARED_CORPUS_FILE)
+	rm -f $(CORPUS_TAGFREQ_FILE)
+	rm -f $(CORPUS_LINETAGFREQ_FILE)
+	rm -f $(CORPUS_PATTERN_FILE)
 	rm -f ./pos_frequency/fn_frequency.txt ./pos_frequency/fn_sorted.txt
 	rm -f ./pos_frequency/gn_frequency.txt ./pos_frequency/gn_sorted.txt
 	rm -f ./pos_frequency/mn_frequency.txt ./pos_frequency/mn_sorted.txt
