@@ -52,7 +52,7 @@ $(CORPUS_TAGGED_FILE):
 
 $(CORPUS_PREPARED_CORPUS_FILE): $(CORPUS_TAGGED_FILE)
 	cat $(CORPUS_TAGGED_FILE) \
-		| python ./hide_pos.py --preknowledge 'n,PF,MN,WN,FN,GN' \
+		| python ./mark_rules.py --seed 'giri3,kiszib3,muDU' \
 		> $(CORPUS_PREPARED_CORPUS_FILE)
 
 $(CORPUS_TAGFREQ_FILE):
@@ -78,7 +78,6 @@ $(CORPUS_PATTERN_FILE):
 # Corpus statistics by part of speech.
 
 CORPUS_STATISTICS: \
-	$(CORPUS_BARETAGGED_FILE) \
 	./pos_frequency/fn_frequency.txt \
 	./pos_frequency/gn_frequency.txt \
 	./pos_frequency/mn_frequency.txt \
@@ -88,14 +87,12 @@ CORPUS_STATISTICS: \
 	./pos_frequency/u_frequency.txt \
 	./pos_frequency/wn_frequency.txt
 		
-$(CORPUS_BARETAGGED_FILE): ./pos_frequency
+$(CORPUS_BARETAGGED_FILE):
+	mkdir --parents ./pos_frequency
 	./tag_corpus.py --nogloss --bestlemma --pf --bare \
 		> $(CORPUS_BARETAGGED_FILE)
 
-./pos_frequency:
-	mkdir ./pos_frequency
-
-./pos_frequency/fn_frequency.txt:
+./pos_frequency/fn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$FN\$$' \
@@ -107,7 +104,7 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 	sort -k2.1 ./pos_frequency/fn_frequency.txt \
 		> ./pos_frequency/fn_sorted.txt
 
-./pos_frequency/gn_frequency.txt:
+./pos_frequency/gn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$GN\$$' \
@@ -120,7 +117,7 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 	sort -k2.1 ./pos_frequency/gn_frequency.txt \
 		> ./pos_frequency/gn_sorted.txt
 
-./pos_frequency/mn_frequency.txt:
+./pos_frequency/mn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$MN\$$' \
@@ -132,7 +129,7 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 	sort -k2.1 ./pos_frequency/mn_frequency.txt \
 		> ./pos_frequency/mn_sorted.txt
 
-./pos_frequency/n_frequency.txt:
+./pos_frequency/n_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$n\$$' \
@@ -144,7 +141,7 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 	sort -k2.1 ./pos_frequency/n_frequency.txt \
 		> ./pos_frequency/n_sorted.txt
 
-./pos_frequency/on_frequency.txt:
+./pos_frequency/on_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$ON\$$' \
@@ -156,7 +153,7 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 	sort -k2.1 ./pos_frequency/on_frequency.txt \
 		> ./pos_frequency/on_sorted.txt
 
-./pos_frequency/tn_frequency.txt:
+./pos_frequency/tn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$TN\$$' \
@@ -168,7 +165,7 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 	sort -k2.1 ./pos_frequency/tn_frequency.txt \
 		> ./pos_frequency/tn_sorted.txt
 
-./pos_frequency/u_frequency.txt:
+./pos_frequency/u_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$u\$$' \
@@ -180,7 +177,7 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 	sort -k2.1 ./pos_frequency/u_frequency.txt \
 		> ./pos_frequency/u_sorted.txt
 
-./pos_frequency/wn_frequency.txt:
+./pos_frequency/wn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$WN\$$' \
@@ -194,7 +191,12 @@ $(CORPUS_BARETAGGED_FILE): ./pos_frequency
 
 # Preknowledge
 
-$(CORPUS_PREKNOWLEDGE_FILE): CORPUS_STATISTICS
+$(CORPUS_PREKNOWLEDGE_FILE): \
+	./pos_frequency/fn_frequency.txt \
+	./pos_frequency/gn_frequency.txt \
+	./pos_frequency/mn_frequency.txt \
+	./pos_frequency/tn_frequency.txt \
+	./pos_frequency/wn_frequency.txt
 	cat ./pos_frequency/fn_frequency.txt \
 		| head -50 \
 		| awk '{ print $$2 "$$FN$$" }' \
@@ -238,4 +240,4 @@ clean:
 	rm -f ./pos_frequency/tn_frequency.txt ./pos_frequency/tn_sorted.txt
 	rm -f ./pos_frequency/u_frequency.txt  ./pos_frequency/u_sorted.txt
 	rm -f ./pos_frequency/wn_frequency.txt ./pos_frequency/wn_sorted.txt
-	rmdir ./pos_frequency
+	rm -f ./pos_frequency
