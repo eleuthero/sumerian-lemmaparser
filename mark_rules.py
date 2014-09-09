@@ -5,66 +5,46 @@ import fileinput
 import operator
 from sys import stdout
 
-# All parts of speech.
-
-ALL_POS = [
-              'W',  # Sumerian-language words with glosses
-                    #     (e.g. ninda == "bread")
-              'n',  # Numbers.
-              'PN', # Personal names.
-              'PF', # [Custom] Professions and titles.
-              'X',  # Unknown words.
-              'u',  # Unlemmatizable words.
-                    #     (generally due to sign damage or loss)
-              'GN', # Geographical names. (primarily cities)
-              'DN', # Divine names.
-              'MN', # Month names.
-              'RN', # Royal names.
-              'FN', # Field names. (primarily agricultural)
-              'WN', # Watercourse names.  (primarily rivers)
-              'TN', # Temple names.
-              'ON', # Object names.
-              'AN', # Agricultural names.
-              'CN'  # Celestial names.
-          ]
-
-# Default list of parts of speech to grant preknowledge.
-
-SHOW_POS = [ 'n', 'PF' ] # , 'GN', 'DN', 'MN', 'RN',
-                         # 'FN', 'WN', 'TN', 'ON', 'AN', 'CN' ]
+global SEED_WORDS 
 
 def init_parser():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--preknowledge',
+    parser.add_argument('--seed',
                         type = str,
-                        default = ','.join(SHOW_POS),
-                        # choices = ALL_POS,
-                        help='List of parts of speech for which to grant ' +
-                             'preknowledge.')
+                        default = '',
+                        help='Words used in seed rules to be marked as ' \
+                             'their own parts of speech.')
 
     return parser.parse_args()
 
-def set_pos_list(args):
-    global SHOW_POS
+def set_seed_words(args):
+    global SEED_WORDS
 
-    SHOW_POS = args.preknowledge.split(',')
+    SEED_WORDS = args.seed.split(',')
 
 def process_token(token):
+    global SEED_WORDS
+
     tokens = token.split('$')
     (word, pos) = tokens[0:2]
 
+    # Start with the word itself.
+
+    result = word
+
     # Always tag the word with the true pos.
 
-    word += '*%s*' % pos
+    result += '*%s*' % pos
 
-    # If we have preknowledge about this pos, reveal the pos.
+    # If we have preknowledge about this word, mark it as its own
+    # synethetic part of speech.
 
-    if pos in SHOW_POS:
-        word += '$%s$' % pos
+    if word in SEED_WORDS:
+        result += '$%s$' % word
 
-    return word
+    return result 
 
 def parse_mega_corpus(args):
 
@@ -106,5 +86,5 @@ def parse_mega_corpus(args):
 # ====
 
 args = init_parser()
-set_pos_list(args)
+set_seed_words(args)
 parse_mega_corpus(args)
