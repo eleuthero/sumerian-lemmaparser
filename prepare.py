@@ -3,9 +3,11 @@
 import argparse
 import fileinput
 import operator
+import os.path
 from sys import stdout
 
 global SEED_WORDS 
+global PREKNOWLEDGE
 
 def init_parser():
 
@@ -17,6 +19,12 @@ def init_parser():
                         help='Words used in seed rules to be marked as ' \
                              'their own parts of speech.')
 
+    parser.add_argument('--preknowledge',
+                        type = str,
+                        default = None,
+                        help='File containing words and their parts of ' \
+                             'speech to be used as preknowledge.')
+
     return parser.parse_args()
 
 def set_seed_words(args):
@@ -24,8 +32,20 @@ def set_seed_words(args):
 
     SEED_WORDS = args.seed.split(',')
 
+def set_preknowlege(args):
+    global PREKNOWLEDGE
+
+    if args.preknowledge:
+        if os.path.isfile(args.preknowledge):
+            PREKNOWLEDGE = list()
+            with open(args.preknowledge) as fin:
+                lines = fin.readlines()
+                for line in lines:
+                    PREKNOWLEDGE.append( line.strip() )
+
 def process_token(token):
     global SEED_WORDS
+    global PREKNOWLEDGE
 
     tokens = token.split('$')
     (word, pos) = tokens[0:2]
@@ -38,11 +58,16 @@ def process_token(token):
 
     result += '*%s*' % pos
 
-    # If we have preknowledge about this word, mark it as its own
-    # synethetic part of speech.
+    # If this is a seed word, mark it as its own synethetic part of speech.
 
     if word in SEED_WORDS:
         result += '$%s$' % word
+
+    # If this word is included in our preknowledge, mark it with the
+    # part of speech from the preknowledge.
+
+    elif token in PREKNOWLEDGE:
+        result += '$%s$' % pos
 
     return result 
 
@@ -87,4 +112,5 @@ def parse_mega_corpus(args):
 
 args = init_parser()
 set_seed_words(args)
+set_preknowlege(args)
 parse_mega_corpus(args)

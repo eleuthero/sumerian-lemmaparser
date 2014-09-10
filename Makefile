@@ -26,8 +26,7 @@ all: \
 	$(CORPUS_LINETAGFREQ_FILE) \
 	$(CORPUS_PATTERN_FILE) \
 	$(CORPUS_PREPARED_CORPUS_FILE) \
-	CORPUS_STATISTICS \
-	$(CORPUS_PREKNOWLEDGE_FILE)
+	CORPUS_STATISTICS
 
 $(CORPUS_FILE):
 	if [ ! -f "$(CORPUS_FILE)" ]; then \
@@ -50,11 +49,6 @@ $(CORPUS_TAGGED_FILE):
 	./tag_corpus.py --nogloss --bestlemma --pf \
 		> $(CORPUS_TAGGED_FILE)
 
-$(CORPUS_PREPARED_CORPUS_FILE): $(CORPUS_TAGGED_FILE)
-	cat $(CORPUS_TAGGED_FILE) \
-		| python ./mark_rules.py --seed 'giri3,kiszib3,muDU' \
-		> $(CORPUS_PREPARED_CORPUS_FILE)
-
 $(CORPUS_TAGFREQ_FILE):
 	./tag_corpus.py --nogloss --bestlemma --pf --tagsonly --bare \
                 | sed -e 's/ /\n/g' \
@@ -75,6 +69,44 @@ $(CORPUS_PATTERN_FILE):
 	./patterns.py --threshold1 2500 --threshold2 500 > ./temp
 	mv ./temp $(CORPUS_PATTERN_FILE)
 
+$(CORPUS_PREPARED_CORPUS_FILE): \
+	$(CORPUS_TAGGED_FILE) \
+	$(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat $(CORPUS_TAGGED_FILE) \
+		| python ./prepare.py \
+			--seed 'giri3,kiszib3,mu-kux(DU)' \
+			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
+		> $(CORPUS_PREPARED_CORPUS_FILE)
+
+# Preknowledge
+
+$(CORPUS_PREKNOWLEDGE_FILE): CORPUS_STATISTICS
+	cat ./pos_frequency/fn_frequency.txt \
+		| head -50 \
+		| awk '{ print $$2 "$$FN$$" }' \
+		> $(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat ./pos_frequency/gn_frequency.txt \
+		| head -50 \
+		| awk '{ print $$2 "$$GN$$" }' \
+		>> $(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat ./pos_frequency/mn_frequency.txt \
+		| head -50 \
+		| awk '{ print $$2 "$$MN$$" }' \
+		>> $(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat ./pos_frequency/tn_frequency.txt \
+		| head -20 \
+		| awk '{ print $$2 "$$TN$$" }' \
+		>> $(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat ./pos_frequency/wn_frequency.txt \
+		| head -50 \
+		| awk '{ print $$2 "$$WN$$" }' \
+		>> $(CORPUS_PREKNOWLEDGE_FILE)
+
 # Corpus statistics by part of speech.
 
 CORPUS_STATISTICS: \
@@ -86,11 +118,6 @@ CORPUS_STATISTICS: \
 	./pos_frequency/tn_frequency.txt \
 	./pos_frequency/u_frequency.txt \
 	./pos_frequency/wn_frequency.txt
-		
-$(CORPUS_BARETAGGED_FILE):
-	mkdir --parents ./pos_frequency
-	./tag_corpus.py --nogloss --bestlemma --pf --bare \
-		> $(CORPUS_BARETAGGED_FILE)
 
 ./pos_frequency/fn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
@@ -189,38 +216,12 @@ $(CORPUS_BARETAGGED_FILE):
 	sort -k2.1 ./pos_frequency/wn_frequency.txt \
 		> ./pos_frequency/wn_sorted.txt
 
-# Preknowledge
+$(CORPUS_BARETAGGED_FILE):
+	mkdir --parents ./pos_frequency
+	./tag_corpus.py --nogloss --bestlemma --pf --bare \
+		> $(CORPUS_BARETAGGED_FILE)
 
-$(CORPUS_PREKNOWLEDGE_FILE): \
-	./pos_frequency/fn_frequency.txt \
-	./pos_frequency/gn_frequency.txt \
-	./pos_frequency/mn_frequency.txt \
-	./pos_frequency/tn_frequency.txt \
-	./pos_frequency/wn_frequency.txt
-	cat ./pos_frequency/fn_frequency.txt \
-		| head -50 \
-		| awk '{ print $$2 "$$FN$$" }' \
-		> $(CORPUS_PREKNOWLEDGE_FILE)
-
-	cat ./pos_frequency/gn_frequency.txt \
-		| head -50 \
-		| awk '{ print $$2 "$$GN$$" }' \
-		>> $(CORPUS_PREKNOWLEDGE_FILE)
-
-	cat ./pos_frequency/mn_frequency.txt \
-		| head -50 \
-		| awk '{ print $$2 "$$MN$$" }' \
-		>> $(CORPUS_PREKNOWLEDGE_FILE)
-
-	cat ./pos_frequency/tn_frequency.txt \
-		| head -20 \
-		| awk '{ print $$2 "$$TN$$" }' \
-		>> $(CORPUS_PREKNOWLEDGE_FILE)
-
-	cat ./pos_frequency/wn_frequency.txt \
-		| head -50 \
-		| awk '{ print $$2 "$$WN$$" }' \
-		>> $(CORPUS_PREKNOWLEDGE_FILE)
+# Cleanup
 
 clean:
 	rm -f $(CORPUS_LEMMA_FILE)
@@ -232,12 +233,4 @@ clean:
 	rm -f $(CORPUS_LINETAGFREQ_FILE)
 	rm -f $(CORPUS_PATTERN_FILE)
 	rm -f $(CORPUS_PREKNOWLEDGE_FILE)
-	rm -f ./pos_frequency/fn_frequency.txt ./pos_frequency/fn_sorted.txt
-	rm -f ./pos_frequency/gn_frequency.txt ./pos_frequency/gn_sorted.txt
-	rm -f ./pos_frequency/mn_frequency.txt ./pos_frequency/mn_sorted.txt
-	rm -f ./pos_frequency/n_frequency.txt  ./pos_frequency/n_sorted.txt
-	rm -f ./pos_frequency/on_frequency.txt ./pos_frequency/on_sorted.txt
-	rm -f ./pos_frequency/tn_frequency.txt ./pos_frequency/tn_sorted.txt
-	rm -f ./pos_frequency/u_frequency.txt  ./pos_frequency/u_sorted.txt
-	rm -f ./pos_frequency/wn_frequency.txt ./pos_frequency/wn_sorted.txt
-	rm -f ./pos_frequency
+	rm -rf ./pos_frequency
