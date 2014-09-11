@@ -4,8 +4,9 @@ SHELL=/bin/bash
 WGET=/usr/bin/wget
 UNZIP=/usr/bin/unzip
 
-CORPUS_FILE=./cdli_atffull.zip
-CORPUS_FILE_URL= http://www.cdli.ucla.edu/tools/cdlifiles/cdli_atffull.zip
+CORPUS_FILE_ZIP=./cdli_atffull.zip
+CORPUS_FILE_URL= http://www.cdli.ucla.edu/tools/cdlifiles/$(CORPUS_FILE_ZIP)
+CORPUS_FILE=./cdli_atffull.atf
 
 CORPUS_PERCENT=100
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
@@ -18,56 +19,81 @@ CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 CORPUS_PREKNOWLEDGE_FILE=./preknowledge.txt
 
-all: \
-	$(CORPUS_FILE) \
-	$(CORPUS_LEMMA_FILE) \
-	$(CORPUS_NONLEMMA_FILE) \
-	$(CORPUS_TAGGED_FILE) \
-	$(CORPUS_LINETAGFREQ_FILE) \
-	$(CORPUS_PATTERN_FILE) \
+all:	\
 	$(CORPUS_PREPARED_CORPUS_FILE) \
-	CORPUS_STATISTICS
+	$(CORPUS_TAGFREQ_FILE) \
+	$(CORPUS_LINETAGFREQ_FILE) \
+	$(CORPUS_PATTERN_FILE)
 
-$(CORPUS_FILE):
+# Fetch compressed CDLI Ur III corpus from source.
+
+$(CORPUS_FILE_ZIP):
+
+	@echo "Getting full corpus file from CDLI..."
+	$(WGET) $(CORPUS_FILE_URL) -O $(CORPUS_FILE_ZIP)
+
+# Uncompress CDLI corpus.
+
+$(CORPUS_FILE): $(CORPUS_FILE_ZIP)
 	if [ ! -f "$(CORPUS_FILE)" ]; then \
-		@echo "Getting full corpus file from CDLI..."; \
-		$(WGET) $(CORPUS_FILE_URL) -O $(CORPUS_FILE); \
-		$(UNZIP) $(CORPUS_FILE); \
+		$(UNZIP) $(CORPUS_FILE_ZIP); \
 	fi
 
-$(CORPUS_LEMMA_FILE):
+# Separate corpus into lemmatized and unlemmatized portions.
+
+$(CORPUS_LEMMA_FILE): $(CORPUS_FILE)
+
 	./generate_corpus.py --lemma --lang sux \
 		--percent $(CORPUS_PERCENT) \
 		> $(CORPUS_LEMMA_FILE)
 
-$(CORPUS_NONLEMMA_FILE):
+$(CORPUS_NONLEMMA_FILE): $(CORPUS_FILE)
+
 	./generate_corpus.py --nonlemma --lang sux \
 		--percent $(CORPUS_PERCENT) \
 		> $(CORPUS_NONLEMMA_FILE)
 
-$(CORPUS_TAGGED_FILE):
+# From the lemmatized portion of the corpus, generate a tagged corpus.
+
+$(CORPUS_TAGGED_FILE): $(CORPUS_LEMMA_FILE)
+
 	./tag_corpus.py --nogloss --bestlemma --pf \
 		> $(CORPUS_TAGGED_FILE)
 
-$(CORPUS_TAGFREQ_FILE):
+# From the lemmatized portion of the corpus, generate a tag frequency
+# analysis.
+
+$(CORPUS_TAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
+
 	./tag_corpus.py --nogloss --bestlemma --pf --tagsonly --bare \
                 | sed -e 's/ /\n/g' \
                 | sed -e '/^$$/d' \
 		| sort | uniq -c | sort -rn \
 		> $(CORPUS_TAGFREQ_FILE)
 
-$(CORPUS_LINETAGFREQ_FILE):
+# From the lemmatized portion of the corpus, generate a frequency analysis
+# of lines reduced to their parts of speech.
+
+$(CORPUS_LINETAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
+
 	./tag_corpus.py --bestlemma --pf --tagsonly --bare \
                 | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
 		| sort | uniq -c | sort -rn \
 		> $(CORPUS_LINETAGFREQ_FILE)
 
-$(CORPUS_PATTERN_FILE):
+# From the lemmatized portion of the corpus, generate a frequency analysis
+# of which sentence patterns precede and succeed other sentence patterns.
+
+$(CORPUS_PATTERN_FILE): $(CORPUS_LEMMA_FILE)
+
 	./tag_corpus.py --bestlemma --pf --tagsonly \
                 | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
 		> $(CORPUS_PATTERN_FILE)
-	./patterns.py --threshold1 2500 --threshold2 500 > ./temp
+	./patterns.py --threshold1 1000 --threshold2 100 > ./temp
 	mv ./temp $(CORPUS_PATTERN_FILE)
+
+# From the tagged corpus and a preknowledge file, generate our final
+# prepared corpus.
 
 $(CORPUS_PREPARED_CORPUS_FILE): \
 	$(CORPUS_TAGGED_FILE) \
@@ -80,8 +106,30 @@ $(CORPUS_PREPARED_CORPUS_FILE): \
 		> $(CORPUS_PREPARED_CORPUS_FILE)
 
 # Preknowledge
+# ============
 
-$(CORPUS_PREKNOWLEDGE_FILE): CORPUS_STATISTICS
+# Create subdirectory for part-of-speech frequency analysis.
+
+./pos_frequency:
+
+	mkdir --parents ./pos_frequency
+
+# From the corpus statistics, accumulate the heads of each of the sorted
+# files to give us the most attested words of each part of speech.  We will
+# use these words and their parts of speech as preknowledge for our prepared
+# corpus.
+
+$(CORPUS_PREKNOWLEDGE_FILE): \
+	./pos_frequency \
+	./pos_frequency/fn_frequency.txt \
+	./pos_frequency/gn_frequency.txt \
+	./pos_frequency/mn_frequency.txt \
+	./pos_frequency/n_frequency.txt \
+	./pos_frequency/on_frequency.txt \
+	./pos_frequency/tn_frequency.txt \
+	./pos_frequency/u_frequency.txt \
+	./pos_frequency/wn_frequency.txt
+
 	cat ./pos_frequency/fn_frequency.txt \
 		| head -50 \
 		| awk '{ print $$2 "$$FN$$" }' \
@@ -108,18 +156,20 @@ $(CORPUS_PREKNOWLEDGE_FILE): CORPUS_STATISTICS
 		>> $(CORPUS_PREKNOWLEDGE_FILE)
 
 # Corpus statistics by part of speech.
+# ====================================
 
-CORPUS_STATISTICS: \
-	./pos_frequency/fn_frequency.txt \
-	./pos_frequency/gn_frequency.txt \
-	./pos_frequency/mn_frequency.txt \
-	./pos_frequency/n_frequency.txt \
-	./pos_frequency/on_frequency.txt \
-	./pos_frequency/tn_frequency.txt \
-	./pos_frequency/u_frequency.txt \
-	./pos_frequency/wn_frequency.txt
+# Generate a bare tagged file containing only the words in the lemmatized
+# corpus and their associated parts of speech.
+
+$(CORPUS_BARETAGGED_FILE):
+
+	./tag_corpus.py --nogloss --bestlemma --pf --bare \
+		> $(CORPUS_BARETAGGED_FILE)
+
+# FN (field name) frequency analysis.
 
 ./pos_frequency/fn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$FN\$$' \
@@ -131,7 +181,10 @@ CORPUS_STATISTICS: \
 	sort -k2.1 ./pos_frequency/fn_frequency.txt \
 		> ./pos_frequency/fn_sorted.txt
 
+# GN (geographical name) frequency analysis.
+
 ./pos_frequency/gn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$GN\$$' \
@@ -144,7 +197,10 @@ CORPUS_STATISTICS: \
 	sort -k2.1 ./pos_frequency/gn_frequency.txt \
 		> ./pos_frequency/gn_sorted.txt
 
+# MN (month name) frequency analysis.
+
 ./pos_frequency/mn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$MN\$$' \
@@ -156,7 +212,10 @@ CORPUS_STATISTICS: \
 	sort -k2.1 ./pos_frequency/mn_frequency.txt \
 		> ./pos_frequency/mn_sorted.txt
 
+# n (number) frequency analysis.
+
 ./pos_frequency/n_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$n\$$' \
@@ -168,7 +227,10 @@ CORPUS_STATISTICS: \
 	sort -k2.1 ./pos_frequency/n_frequency.txt \
 		> ./pos_frequency/n_sorted.txt
 
+# ON (object name) frequency analysis.
+
 ./pos_frequency/on_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$ON\$$' \
@@ -180,7 +242,10 @@ CORPUS_STATISTICS: \
 	sort -k2.1 ./pos_frequency/on_frequency.txt \
 		> ./pos_frequency/on_sorted.txt
 
+# TN (temple name) frequency analysis.
+
 ./pos_frequency/tn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$TN\$$' \
@@ -192,7 +257,10 @@ CORPUS_STATISTICS: \
 	sort -k2.1 ./pos_frequency/tn_frequency.txt \
 		> ./pos_frequency/tn_sorted.txt
 
+# u (unlemmatizable) frequency analysis.
+
 ./pos_frequency/u_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$u\$$' \
@@ -203,6 +271,8 @@ CORPUS_STATISTICS: \
 
 	sort -k2.1 ./pos_frequency/u_frequency.txt \
 		> ./pos_frequency/u_sorted.txt
+
+# WN (watercourse name) frequency analysis.
 
 ./pos_frequency/wn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
 	cat $(CORPUS_BARETAGGED_FILE) \
@@ -216,12 +286,8 @@ CORPUS_STATISTICS: \
 	sort -k2.1 ./pos_frequency/wn_frequency.txt \
 		> ./pos_frequency/wn_sorted.txt
 
-$(CORPUS_BARETAGGED_FILE):
-	mkdir --parents ./pos_frequency
-	./tag_corpus.py --nogloss --bestlemma --pf --bare \
-		> $(CORPUS_BARETAGGED_FILE)
-
 # Cleanup
+# =======
 
 clean:
 	rm -f $(CORPUS_LEMMA_FILE)
