@@ -24,6 +24,13 @@ re_impl = re.compile(r"\<\<([A-Za-z0-9-()/#?*{}|@+ ]+)\>\>")
 
 re_slash = re.compile(r"(/)[^0-9]")
 
+# Word regex; if a word doesn't match this regex, just ignore it; don't
+# try to tag it.  This is necessary because of some transliterational typos,
+# especially in older tablets, to prevent noise like commas from appearing
+# as their own words.
+
+re_word = re.compile(r"[A-Za-z0-9-]")
+
 # List of professions.  If the --pf switch is provided, any lemma
 # with the following roots will be marked with the PF part-of-speech
 # tag.
@@ -273,6 +280,14 @@ def formatLem(lem, args):
 
 def printWord(word, args):
 
+    # Check to make sure the word is not noise (such as a bare comma).
+    # If it is, just bail.
+
+    if not re_word.search(word):
+        return
+
+    # If we're not just emitting part of speech tags, emit the word.
+
     if not args.tagsonly:
         stdout.write(word)
 
@@ -372,8 +387,31 @@ def process(line, args):
             if not args.bare:
                 stdout.write('<l> ')
 
+            """
+            The lines of text may contain inline comments in the form
+            ($ ... $).  Oddly, the individual tokens in the inline comments
+            are lemmatized individually:
+
+            ki ($ blank space $)-ta
+            ki[place]; X; X; X; X
+
+            so we don't want to use a regex to remove the comments; rather,
+            we'll just look for the inline comment delimiters and use the
+            to set a processing flag.  Any signs interrupted by one of these
+            inline comments (like the remaining -ta above) become noise
+            in the lemma and we'll ignore them.
+            """
+           
+            comment = False
             for word in line:
-                printWord(word, args)
+                if '($' in word:
+                    comment = True
+                
+                if not comment:
+                    printWord(word, args)
+
+                if '$)' in word:
+                    comment = False
 
             if not args.bare:
                 stdout.write('</l>')
