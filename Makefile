@@ -128,7 +128,9 @@ $(CORPUS_PREKNOWLEDGE_FILE): \
 	./pos_frequency/on_frequency.txt \
 	./pos_frequency/tn_frequency.txt \
 	./pos_frequency/u_frequency.txt \
-	./pos_frequency/wn_frequency.txt
+	./pos_frequency/wn_frequency.txt \
+	./pos_frequency/w_frequency.txt \
+	./pos_frequency/x_frequency.txt
 
 	cat ./pos_frequency/fn_frequency.txt \
 		| head -50 \
@@ -285,6 +287,31 @@ $(CORPUS_BARETAGGED_FILE):
 
 	sort -k2.1 ./pos_frequency/wn_frequency.txt \
 		> ./pos_frequency/wn_sorted.txt
+
+# X (unknown) frequency analysis.
+
+./pos_frequency/x_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+	cat $(CORPUS_BARETAGGED_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$X\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		| sort | uniq -c | sort -rn \
+		> ./pos_frequency/x_frequency.txt
+
+	sort -k2.1 ./pos_frequency/x_frequency.txt \
+		> ./pos_frequency/x_sorted.txt
+
+# all words frequency analysis.
+
+./pos_frequency/w_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+	cat $(CORPUS_BARETAGGED_FILE) \
+		| sed -e 's/ /\n/g' \
+		| sort | uniq -c | sort -rn \
+		> ./pos_frequency/w_frequency.txt
+
+	sort -k2.1 ./pos_frequency/w_frequency.txt \
+		> ./pos_frequency/w_sorted.txt
 
 # Cleanup
 # =======
