@@ -338,7 +338,7 @@ def cleanWord(word):
     # hyphen sign separator.  This is not linguistically defensible, but
     # it's close enough for our immediate purposes.
 
-    word = re.sub('[.:]', '', word)
+    word = re.sub('[.:]', '-', word)
 
     return word
 
