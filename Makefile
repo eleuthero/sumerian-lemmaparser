@@ -126,6 +126,7 @@ $(CORPUS_PREKNOWLEDGE_FILE): \
 	./pos_frequency/mn_frequency.txt \
 	./pos_frequency/n_frequency.txt \
 	./pos_frequency/on_frequency.txt \
+	./pos_frequency/pn_frequency.txt \
 	./pos_frequency/tn_frequency.txt \
 	./pos_frequency/u_frequency.txt \
 	./pos_frequency/wn_frequency.txt \
@@ -243,6 +244,21 @@ $(CORPUS_BARETAGGED_FILE):
 
 	sort -k2.1 ./pos_frequency/on_frequency.txt \
 		> ./pos_frequency/on_sorted.txt
+
+# PN (personal name) frequency analysis.
+
+./pos_frequency/pn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+
+	cat $(CORPUS_BARETAGGED_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$PN\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		| sort | uniq -c | sort -rn \
+		> ./pos_frequency/pn_frequency.txt
+
+	sort -k2.1 ./pos_frequency/pn_frequency.txt \
+		> ./pos_frequency/pn_sorted.txt
 
 # TN (temple name) frequency analysis.
 
