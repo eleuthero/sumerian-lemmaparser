@@ -334,6 +334,14 @@ def cleanWord(word):
 
     word = re.sub(r'\.\.\.', 'x', word)
 
+    # There is some additional transliteration noise in the
+    # form of bare colons.  I'm not sure what they mean, but
+    # they are consistently lemmatized as X, so they're not
+    # merely typos.  Let's remove them.
+
+    if ':' == word:
+        return None
+
     # Replace : and . signs (indiciating sign metathesis) with the normal
     # hyphen sign separator.  This is not linguistically defensible, but
     # it's close enough for our immediate purposes.
@@ -359,18 +367,19 @@ def cleanLine(line):
     for word in line.split(' ')[1:]:
         word = cleanWord(word)
 
-        if ('%a' == word) or ('=' == word):
+        if word:
+            if ('%a' == word) or ('=' == word):
 
-            # This indicates the language has switched (probably to
-            # Akkadian) for the rest of the line.  Stop parsing this
-            # and any following signs in this line.
+                # This indicates the language has switched (probably to
+                # Akkadian) for the rest of the line.  Stop parsing this
+                # and any following signs in this line.
 
-            break
+                break
 
-        else:
+            else:
 
-            words = words or list()
-            words.append(word)
+                words = words or list()
+                words.append(word)
 
     return words
 
