@@ -25,6 +25,10 @@ def init_parser():
                         help='Remove any lemmata in generated corpus.',
                         action='store_true')
 
+    parser.add_argument('-s', '--seed',
+                        type=int, default=None,
+                        help='Specifies random number generator seed to use.')
+
     g = parser.add_mutually_exclusive_group()
 
     g.add_argument('-l', '--lemma',
@@ -84,8 +88,13 @@ def parse(args):
                 valid = False 
                 lines = [ ]
 
+def set_rng_seed(args):
+    random.seed(args.seed)
+
 # ====
 # Main
 # ====
 
-parse( init_parser() )
+args = init_parser()
+set_rng_seed(args)
+parse(args)

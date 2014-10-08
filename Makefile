@@ -9,6 +9,8 @@ CORPUS_FILE_URL= http://www.cdli.ucla.edu/tools/cdlifiles/$(CORPUS_FILE_ZIP)
 CORPUS_FILE=./cdli_atffull.atf
 
 CORPUS_PERCENT=100
+CORPUS_RNGSEED=1
+
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_NONLEMMA_FILE=./cdli_atffull_nonlemma.atf
 CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
@@ -45,12 +47,14 @@ $(CORPUS_LEMMA_FILE): $(CORPUS_FILE)
 
 	./generate_corpus.py --lemma --lang sux \
 		--percent $(CORPUS_PERCENT) \
+		--seed $(CORPUS_RNGSEED) \
 		> $(CORPUS_LEMMA_FILE)
 
 $(CORPUS_NONLEMMA_FILE): $(CORPUS_FILE)
 
 	./generate_corpus.py --nonlemma --lang sux \
 		--percent $(CORPUS_PERCENT) \
+		--seed $(CORPUS_RNGSEED) \
 		> $(CORPUS_NONLEMMA_FILE)
 
 # From the lemmatized portion of the corpus, generate a tagged corpus.
@@ -171,13 +175,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # FN (field name) frequency analysis.
 
-./pos_frequency/fn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/fn.txt: $(CORPUS_BARETAGGED_FILE)
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$FN\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/fn.txt
+
+./pos_frequency/fn_frequency.txt: ./pos_frequency/fn.txt
+
+	cat ./pos_frequency/fn.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/fn_frequency.txt
 
@@ -186,7 +195,7 @@ $(CORPUS_BARETAGGED_FILE):
 
 # GN (geographical name) frequency analysis.
 
-./pos_frequency/gn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/gn.txt: $(CORPUS_BARETAGGED_FILE)
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
@@ -194,6 +203,11 @@ $(CORPUS_BARETAGGED_FILE):
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
 		| sed -e 's/{ki}.*/{ki}/g' \
+		> ./pos_frequency/gn.txt
+
+./pos_frequency/gn_frequency.txt: ./pos_frequency/gn.txt
+
+	cat ./pos_frequency/gn.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/gn_frequency.txt
 
@@ -202,13 +216,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # MN (month name) frequency analysis.
 
-./pos_frequency/mn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/mn.txt: $(CORPUS_BARETAGGED_FILE)
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$MN\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/mn.txt
+
+./pos_frequency/mn_frequency.txt: ./pos_frequency/mn.txt
+
+	cat ./pos_frequency/mn.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/mn_frequency.txt
 
@@ -217,13 +236,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # n (number) frequency analysis.
 
-./pos_frequency/n_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/n.txt: $(CORPUS_BARETAGGED_FILE)
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$n\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/n.txt
+
+./pos_frequency/n_frequency.txt: ./pos_frequency/n.txt
+
+	cat ./pos_frequency/n.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/n_frequency.txt
 
@@ -232,13 +256,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # ON (object name) frequency analysis.
 
-./pos_frequency/on_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/on.txt: $(CORPUS_BARETAGGED_FILE)
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$ON\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/on.txt
+
+./pos_frequency/on_frequency.txt: ./pos_frequency/on.txt
+
+	cat ./pos_frequency/on.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/on_frequency.txt
 
@@ -247,13 +276,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # PN (personal name) frequency analysis.
 
-./pos_frequency/pn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/pn.txt: $(CORPUS_BARETAGGED_FILE)
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$PN\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/pn.txt
+
+./pos_frequency/pn_frequency.txt: ./pos_frequency/pn.txt
+
+	cat ./pos_frequency/pn.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/pn_frequency.txt
 
@@ -262,13 +296,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # TN (temple name) frequency analysis.
 
-./pos_frequency/tn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/tn.txt: $(CORPUS_BARETAGGED_FILE)
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$TN\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/tn.txt
+
+./pos_frequency/tn_frequency.txt: ./pos_frequency/tn.txt
+
+	cat ./pos_frequency/tn.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/tn_frequency.txt
 
@@ -277,13 +316,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # u (unlemmatizable) frequency analysis.
 
-./pos_frequency/u_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/u.txt: $(CORPUS_BARETAGGED_FILE)
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$u\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/u.txt
+
+./pos_frequency/u_frequency.txt: ./pos_frequency/u.txt
+
+	cat ./pos_frequency/u.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/u_frequency.txt
 
@@ -292,12 +336,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # WN (watercourse name) frequency analysis.
 
-./pos_frequency/wn_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/wn.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$WN\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/wn.txt
+
+./pos_frequency/wn_frequency.txt: ./pos_frequency/wn.txt
+
+	cat ./pos_frequency/wn.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/wn_frequency.txt
 
@@ -306,12 +356,18 @@ $(CORPUS_BARETAGGED_FILE):
 
 # X (unknown) frequency analysis.
 
-./pos_frequency/x_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/x.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
 		| grep '\$$X\$$' \
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/x.txt
+
+./pos_frequency/x_frequency.txt: ./pos_frequency/x.txt
+
+	cat ./pos_frequency/x.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/x_frequency.txt
 
@@ -320,9 +376,15 @@ $(CORPUS_BARETAGGED_FILE):
 
 # all words frequency analysis.
 
-./pos_frequency/w_frequency.txt: $(CORPUS_BARETAGGED_FILE)
+./pos_frequency/w.txt: $(CORPUS_BARETAGGED_FILE)
+
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
+		> ./pos_frequency/w.txt
+
+./pos_frequency/w_frequency.txt: ./pos_frequency/w.txt
+
+	cat ./pos_frequency/w.txt \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/w_frequency.txt
 
