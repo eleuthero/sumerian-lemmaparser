@@ -21,11 +21,49 @@ CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 CORPUS_PREKNOWLEDGE_FILE=./preknowledge.txt
 
+FALSEPOSITIVE_SOURCEFILE=fp.txt
+FALSEPOSITIVE_DIGESTFILE=fp_digest.txt
+FALSEPOSITIVE_DIGEST_COUNT=50
+FALSEPOSITIVE_LINESBEFORE=3
+FALSEPOSITIVE_LINESAFTER=3
+FALSEPOSITIVE_OUTPUTDIGESTFILE=false_positive_digest.atf
+
 all:	\
 	$(CORPUS_PREPARED_CORPUS_FILE) \
 	$(CORPUS_TAGFREQ_FILE) \
 	$(CORPUS_LINETAGFREQ_FILE) \
 	$(CORPUS_PATTERN_FILE)
+
+falsepositive: $(FALSEPOSITIVE_DIGESTFILE)
+
+#	cat $(FALSEPOSITIVE_DIGESTFILE) \
+#		| awk '{ print " -B 5 -A 5 --max-count 1 " $$1 " $(CORPUS_TAGGED_FILE)" }' \
+#		| tr '\n' '\0' \
+#		| xargs -0 grep
+#	
+
+	while read -r line; do \
+		grep -B $(FALSEPOSITIVE_LINESBEFORE) -A $(FALSEPOSITIVE_LINESAFTER) --max-count 1 " $$line" $(CORPUS_TAGGED_FILE); \
+		echo "---------"; \
+		done \
+	< $(FALSEPOSITIVE_DIGESTFILE) \
+	> $(FALSEPOSITIVE_OUTPUTDIGESTFILE)
+
+$(FALSEPOSITIVE_DIGESTFILE): \
+	$(FALSEPOSITIVE_SOURCEFILE)
+
+	cat $(FALSEPOSITIVE_SOURCEFILE) \
+		| python false_positive.py \
+		> $(FALSEPOSITIVE_DIGESTFILE)
+
+	shuf -n $(FALSEPOSITIVE_DIGEST_COUNT) $(FALSEPOSITIVE_DIGESTFILE) \
+		> temp
+	mv temp  $(FALSEPOSITIVE_DIGESTFILE)
+
+	cat $(FALSEPOSITIVE_DIGESTFILE) \
+		| awk 'BEGIN { FS="$$"; OFS="[$$]"; } { print $$1,$$2,"" }' \
+		> temp
+	mv temp $(FALSEPOSITIVE_DIGESTFILE)
 
 # Fetch compressed CDLI Ur III corpus from source.
 
@@ -380,6 +418,7 @@ $(CORPUS_BARETAGGED_FILE):
 
 	cat $(CORPUS_BARETAGGED_FILE) \
 		| sed -e 's/ /\n/g' \
+                | sed -e '/^$$/d' \
 		> ./pos_frequency/w.txt
 
 ./pos_frequency/w_frequency.txt: ./pos_frequency/w.txt
