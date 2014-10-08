@@ -36,14 +36,14 @@ all:	\
 
 falsepositive: $(FALSEPOSITIVE_DIGESTFILE)
 
-#	cat $(FALSEPOSITIVE_DIGESTFILE) \
-#		| awk '{ print " -B 5 -A 5 --max-count 1 " $$1 " $(CORPUS_TAGGED_FILE)" }' \
-#		| tr '\n' '\0' \
-#		| xargs -0 grep
-#	
+	# Generate a digest of the contexts of a subset of the false
+	# positives.
 
 	while read -r line; do \
-		grep -B $(FALSEPOSITIVE_LINESBEFORE) -A $(FALSEPOSITIVE_LINESAFTER) --max-count 1 " $$line" $(CORPUS_TAGGED_FILE); \
+		grep -B $(FALSEPOSITIVE_LINESBEFORE) \
+			-A $(FALSEPOSITIVE_LINESAFTER) \
+			--max-count 1 \
+			" $$line" $(CORPUS_TAGGED_FILE); \
 		echo "---------"; \
 		done \
 	< $(FALSEPOSITIVE_DIGESTFILE) \
