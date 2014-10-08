@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# To create/recreate a prepared corpus, type ``make corpus''.
+# To create/recreate a false positive digest, type ``make falsepositive''.
+# To do all of the above, type ``make all'.
+# To remove all automatically-generated files, type ``make clean''.
+
 SHELL=/bin/bash
 WGET=/usr/bin/wget
 UNZIP=/usr/bin/unzip
@@ -28,7 +33,9 @@ FALSEPOSITIVE_LINESBEFORE=3
 FALSEPOSITIVE_LINESAFTER=3
 FALSEPOSITIVE_OUTPUTDIGESTFILE=false_positive_digest.atf
 
-all:	\
+all: corpus falsepositive
+
+corpus:	\
 	$(CORPUS_PREPARED_CORPUS_FILE) \
 	$(CORPUS_TAGFREQ_FILE) \
 	$(CORPUS_LINETAGFREQ_FILE) \
@@ -443,4 +450,6 @@ clean:
 	rm -f $(CORPUS_LINETAGFREQ_FILE)
 	rm -f $(CORPUS_PATTERN_FILE)
 	rm -f $(CORPUS_PREKNOWLEDGE_FILE)
+	rm -f $(FALSEPOSITIVE_DIGESTFILE)
+	rm -f $(FALSEPOSITIVE_OUTPUTDIGESTFILE)
 	rm -rf ./pos_frequency
