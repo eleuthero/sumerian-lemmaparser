@@ -124,6 +124,10 @@ def init_parser():
                         help='Include only POS tags in output; do not ' \
                              'include the source text.')
 
+    parser.add_argument('--corpusfile',
+                        default='./cdli_atffull_atf',
+                        help='Untagged corpus file to tag.')
+
     return parser.parse_args()
 
 # Funny pattern for iterating via a pair of elements.
@@ -438,7 +442,7 @@ def parse(args):
 
     lines = [ ]
 
-    with open('./cdli_atffull_lemma.atf') as fin:
+    with open(args.corpusfile) as fin:
         for line1, line2 in pairwise(fin):
             line1 = line1.strip()
             line2 = line2.strip()

@@ -13,14 +13,17 @@ CORPUS_FILE_ZIP=./cdli_atffull.zip
 CORPUS_FILE_URL= http://www.cdli.ucla.edu/tools/cdlifiles/$(CORPUS_FILE_ZIP)
 CORPUS_FILE=./cdli_atffull.atf
 
-CORPUS_PERCENT=100
+CORPUS_TRAINING_PERCENT=85
 CORPUS_RNGSEED=1
 
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
-CORPUS_NONLEMMA_FILE=./cdli_atffull_nonlemma.atf
-CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
+CORPUS_LEMMA_TRAINING_FILE=./cdli_atffull_training.atf
+CORPUS_LEMMA_TESTING_FILE=./cdli_atffull_testing.atf
+CORPUS_TAGGED_TRAINING_FILE=./cdli_atffull_training_tagged.atf
+CORPUS_TAGGED_TESTING_FILE=./cdli_atffull_testing_tagged.atf
 CORPUS_BARETAGGED_FILE=./pos_frequency/cdli_atffull_bare.atf
-CORPUS_PREPARED_CORPUS_FILE=./cdli_atffull_prepared.atf
+CORPUS_PREPARED_TRAINING_CORPUS_FILE=./cdli_atffull_training_prepared.atf
+CORPUS_PREPARED_TESTING_CORPUS_FILE=./cdli_atffull_testing_prepared.atf
 CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
@@ -36,7 +39,8 @@ FALSEPOSITIVE_OUTPUTDIGESTFILE=false_positive_digest.atf
 all: corpus falsepositive
 
 corpus:	\
-	$(CORPUS_PREPARED_CORPUS_FILE) \
+	$(CORPUS_PREPARED_TRAINING_CORPUS_FILE) \
+	$(CORPUS_PREPARED_TESTING_CORPUS_FILE) \
 	$(CORPUS_TAGFREQ_FILE) \
 	$(CORPUS_LINETAGFREQ_FILE) \
 	$(CORPUS_PATTERN_FILE)
@@ -90,31 +94,38 @@ $(CORPUS_FILE): $(CORPUS_FILE_ZIP)
 
 $(CORPUS_LEMMA_FILE): $(CORPUS_FILE)
 
-	./generate_corpus.py --lemma --lang sux \
-		--percent $(CORPUS_PERCENT) \
-		--seed $(CORPUS_RNGSEED) \
-		> $(CORPUS_LEMMA_FILE)
-
-$(CORPUS_NONLEMMA_FILE): $(CORPUS_FILE)
-
-	./generate_corpus.py --nonlemma --lang sux \
-		--percent $(CORPUS_PERCENT) \
-		--seed $(CORPUS_RNGSEED) \
-		> $(CORPUS_NONLEMMA_FILE)
+	./generate_corpus.py \
+		--lang sux \
+		--trainingpercent $(CORPUS_TRAINING_PERCENT) \
+		--lemmafile $(CORPUS_LEMMA_FILE) \
+		--trainingfile $(CORPUS_LEMMA_TRAINING_FILE) \
+		--testingfile $(CORPUS_LEMMA_TESTING_FILE) \
+		--seed $(CORPUS_RNGSEED)
 
 # From the lemmatized portion of the corpus, generate a tagged corpus.
 
-$(CORPUS_TAGGED_FILE): $(CORPUS_LEMMA_FILE)
+$(CORPUS_TAGGED_TRAINING_FILE): \
+	$(CORPUS_LEMMA_FILE) $(CORPUS_LEMMA_TRAINING_FILE)
 
 	./tag_corpus.py --nogloss --bestlemma --pf \
-		> $(CORPUS_TAGGED_FILE)
+		--corpusfile $(CORPUS_LEMMA_TRAINING_FILE) \
+		> $(CORPUS_TAGGED_TRAINING_FILE)
+
+$(CORPUS_TAGGED_TESTING_FILE): \
+	$(CORPUS_LEMMA_FILE) $(CORPUS_LEMMA_TESTING_FILE)
+
+	./tag_corpus.py --nogloss --bestlemma --pf \
+		--corpusfile $(CORPUS_LEMMA_TESTING_FILE) \
+		> $(CORPUS_TAGGED_TESTING_FILE)
 
 # From the lemmatized portion of the corpus, generate a tag frequency
 # analysis.
 
 $(CORPUS_TAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
 
-	./tag_corpus.py --nogloss --bestlemma --pf --tagsonly --bare \
+	./tag_corpus.py \
+		--nogloss --bestlemma --pf --tagsonly --bare \
+		--corpusfile $(CORPUS_LEMMA_FILE) \
                 | sed -e 's/ /\n/g' \
                 | sed -e '/^$$/d' \
 		| sort | uniq -c | sort -rn \
@@ -125,7 +136,9 @@ $(CORPUS_TAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
 
 $(CORPUS_LINETAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
 
-	./tag_corpus.py --bestlemma --pf --tagsonly --bare \
+	./tag_corpus.py \
+		--bestlemma --pf --tagsonly --bare \
+		--corpusfile $(CORPUS_LEMMA_FILE) \
                 | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
 		| sort | uniq -c | sort -rn \
 		> $(CORPUS_LINETAGFREQ_FILE)
@@ -135,24 +148,36 @@ $(CORPUS_LINETAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
 
 $(CORPUS_PATTERN_FILE): $(CORPUS_LEMMA_FILE)
 
-	./tag_corpus.py --bestlemma --pf --tagsonly \
+	./tag_corpus.py \
+		--bestlemma --pf --tagsonly \
+		--corpusfile $(CORPUS_LEMMA_FILE) \
                 | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
 		> $(CORPUS_PATTERN_FILE)
 	./patterns.py --threshold1 1000 --threshold2 100 > ./temp
 	mv ./temp $(CORPUS_PATTERN_FILE)
 
-# From the tagged corpus and a preknowledge file, generate our final
-# prepared corpus.
+# From the tagged corpora and a preknowledge file, generate our final
+# prepared corpora.
 
-$(CORPUS_PREPARED_CORPUS_FILE): \
-	$(CORPUS_TAGGED_FILE) \
+$(CORPUS_PREPARED_TRAINING_CORPUS_FILE): \
+	$(CORPUS_TAGGED_TRAINING_FILE) \
 	$(CORPUS_PREKNOWLEDGE_FILE)
 
-	cat $(CORPUS_TAGGED_FILE) \
+	cat $(CORPUS_TAGGED_TRAINING_FILE) \
 		| python ./prepare.py \
-			--seed 'giri3,kiszib3,mu-kux(DU)' \
+			--seed 'giri3,kiszib3,mu-DU' \
 			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
-		> $(CORPUS_PREPARED_CORPUS_FILE)
+		> $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
+
+$(CORPUS_PREPARED_TESTING_CORPUS_FILE): \
+	$(CORPUS_TAGGED_TESTING_FILE) \
+	$(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat $(CORPUS_TAGGED_TESTING_FILE) \
+		| python ./prepare.py \
+			--seed 'giri3,kiszib3,mu-DU' \
+			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
+		> $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
 
 # Preknowledge
 # ============
@@ -213,9 +238,11 @@ $(CORPUS_PREKNOWLEDGE_FILE): \
 # Generate a bare tagged file containing only the words in the lemmatized
 # corpus and their associated parts of speech.
 
-$(CORPUS_BARETAGGED_FILE):
+$(CORPUS_BARETAGGED_FILE): $(CORPUS_LEMMA_FILE)
 
-	./tag_corpus.py --nogloss --bestlemma --pf --bare \
+	./tag_corpus.py \
+		--nogloss --bestlemma --pf --bare \
+		--corpusfile $(CORPUS_LEMMA_FILE) \
 		> $(CORPUS_BARETAGGED_FILE)
 
 # FN (field name) frequency analysis.
@@ -442,10 +469,13 @@ $(CORPUS_BARETAGGED_FILE):
 
 clean:
 	rm -f $(CORPUS_LEMMA_FILE)
-	rm -f $(CORPUS_NONLEMMA_FILE)
-	rm -f $(CORPUS_TAGGED_FILE)
+	rm -f $(CORPUS_LEMMA_TRAINING_FILE)
+	rm -f $(CORPUS_LEMMA_TESTING_FILE)
+	rm -f $(CORPUS_TAGGED_TRAINING_FILE)
+	rm -f $(CORPUS_TAGGED_TESTING_FILE)
 	rm -f $(CORPUS_BARETAGGED_FILE)
-	rm -f $(CORPUS_PREPARED_CORPUS_FILE)
+	rm -r $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
+	rm -r $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
 	rm -f $(CORPUS_TAGFREQ_FILE)
 	rm -f $(CORPUS_LINETAGFREQ_FILE)
 	rm -f $(CORPUS_PATTERN_FILE)
