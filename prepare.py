@@ -29,8 +29,18 @@ def init_parser():
 
 def set_seed_words(args):
     global SEED_WORDS
+    SEED_WORDS = dict()
 
-    SEED_WORDS = args.seed.split(',')
+    for word in args.seed.split(','):
+        if '/' in word:
+
+            # The slash indicates that we wish to replace the seed
+            # word with some root variant of that word.
+
+            (f, r) = word.split('/')
+            SEED_WORDS[f] = r
+        else:
+            SEED_WORDS[word] = word
 
 def set_preknowlege(args):
     global PREKNOWLEDGE
@@ -54,20 +64,26 @@ def process_token(token):
 
     result = word
 
-    # Always tag the word with the true pos.
+    # Give ourselves all numbers as preknowledge.
 
-    result += '*%s*' % pos
+    if 'n' == pos:
+        result += '$%s$' % pos 
 
-    # If this is a seed word, mark it as its own synethetic part of speech.
+    else:
 
-    if word in SEED_WORDS:
-        result += '$%s$' % word
+        # If this is a seed word, mark it as its own synthetic part
+        # of speech.  The SEED_WORDS dict has the words to find as its
+        # keys and the word which which to replace that seed word as 
+        # the associated value.
 
-    # If this word is included in our preknowledge, mark it with the
-    # part of speech from the preknowledge.
+        if word in SEED_WORDS.keys():
+            result += '$%s$' % SEED_WORDS[word]
 
-    elif token in PREKNOWLEDGE:
-        result += '$%s$' % pos
+        # If this word is included in our preknowledge, mark it with the
+        # part of speech from the preknowledge.
+
+        elif token in PREKNOWLEDGE:
+            result += '$%s$' % pos
 
     return result 
 

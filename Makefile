@@ -177,7 +177,7 @@ $(CORPUS_PREPARED_TRAINING_CORPUS_FILE): \
 
 	cat $(CORPUS_TAGGED_TRAINING_FILE) \
 		| python ./prepare.py \
-			--seed 'giri3,kiszib3,mu-DU' \
+			--seed 'giri3/jiri,kiszib3/kiszib,mu-DU/muDU' \
 			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
 		> $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
 
@@ -187,7 +187,7 @@ $(CORPUS_PREPARED_TESTING_CORPUS_FILE): \
 
 	cat $(CORPUS_TAGGED_TESTING_FILE) \
 		| python ./prepare.py \
-			--seed 'giri3,kiszib3,mu-DU' \
+			--seed 'giri3/jiri,kiszib3/kiszib,mu-DU/muDU' \
 			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
 		> $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
 
@@ -271,6 +271,7 @@ $(CORPUS_BARETAGGED_FILE): $(CORPUS_LEMMA_FILE)
 ./pos_frequency/fn_frequency.txt: ./pos_frequency/fn.txt
 
 	cat ./pos_frequency/fn.txt \
+		| grep -v "x" \
 		| sort | uniq -c | sort -rn \
 		> ./pos_frequency/fn_frequency.txt
 
