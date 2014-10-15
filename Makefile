@@ -30,6 +30,9 @@ CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 CORPUS_PREKNOWLEDGE_FILE=./preknowledge.txt
 
+TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE=./training_pn_rn_dn.txt
+TRUEPOSITIVE_TESTING_PN_RN_DN_FILE=./testing_pn_rn_dn.txt
+
 FALSEPOSITIVE_SOURCEFILE=fp.txt
 FALSEPOSITIVE_DIGESTFILE=fp_digest.txt
 FALSEPOSITIVE_DIGEST_COUNT=50
@@ -42,6 +45,8 @@ all: corpus falsepositive
 corpus:	\
 	$(CORPUS_PREPARED_TRAINING_CORPUS_FILE) \
 	$(CORPUS_PREPARED_TESTING_CORPUS_FILE) \
+	$(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE) \
+	$(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE) \
 	$(CORPUS_TAGFREQ_FILE) \
 	$(CORPUS_TAGFREQUNIQ_FILE) \
 	$(CORPUS_LINETAGFREQ_FILE) \
@@ -136,6 +141,7 @@ $(CORPUS_TAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
 $(CORPUS_TAGFREQUNIQ_FILE): $(CORPUS_LEMMA_FILE)
 
 	./tag_corpus.py --nogloss --bestlemma --pf --bare \
+		--corpusfile $(CORPUS_LEMMA_FILE) \
                 | sed -e 's/ /\n/g' \
                 | sed -e '/^$$/d' \
 		| sort | uniq \
@@ -483,6 +489,65 @@ $(CORPUS_BARETAGGED_FILE): $(CORPUS_LEMMA_FILE)
 	sort -k2.1 ./pos_frequency/w_frequency.txt \
 		> ./pos_frequency/w_sorted.txt
 
+# Post-corpora partitioning
+# =========================
+
+$(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE): $(CORPUS_TAGGED_TRAINING_FILE)
+
+	cat $(CORPUS_TAGGED_TRAINING_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$PN\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
+
+	cat $(CORPUS_TAGGED_TRAINING_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$RN\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		>> $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
+
+	cat $(CORPUS_TAGGED_TRAINING_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$DN\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		>> $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
+
+	cat $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE) \
+		| sort | uniq \
+		> temp
+	mv temp $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
+
+$(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE): $(CORPUS_TAGGED_TESTING_FILE)
+
+	cat $(CORPUS_TAGGED_TESTING_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$PN\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
+
+	cat $(CORPUS_TAGGED_TESTING_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$RN\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		>> $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
+
+	cat $(CORPUS_TAGGED_TESTING_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$DN\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		>> $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
+
+	cat $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE) \
+		| sort | uniq \
+		> temp
+	mv temp $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
+
 # Cleanup
 # =======
 
@@ -502,4 +567,6 @@ clean:
 	rm -f $(CORPUS_PREKNOWLEDGE_FILE)
 	rm -f $(FALSEPOSITIVE_DIGESTFILE)
 	rm -f $(FALSEPOSITIVE_OUTPUTDIGESTFILE)
+	rm -f $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
+	rm -f $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
 	rm -rf ./pos_frequency
