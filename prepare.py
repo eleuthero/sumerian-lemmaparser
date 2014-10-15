@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import re
 import argparse
 import fileinput
 import operator
@@ -84,6 +85,10 @@ def process_token(token):
 
         elif token in PREKNOWLEDGE:
             result += '$%s$' % pos
+
+    # Final preprocessing for problematic words
+
+    result = re.sub('--', '-', result)     # Take that, lu2--dingir-rax!
 
     return result 
 
