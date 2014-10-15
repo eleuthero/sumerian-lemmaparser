@@ -177,7 +177,7 @@ $(CORPUS_PREPARED_TRAINING_CORPUS_FILE): \
 
 	cat $(CORPUS_TAGGED_TRAINING_FILE) \
 		| python ./prepare.py \
-			--seed 'giri3/jiri,kiszib3/kiszib,mu-DU/muDU' \
+			--seed 'giri3/jiri,kiszib3/kiszib,mu-DU/muDU,iti/MON,u4/DAY,sze/UNIT,gin2/UNIT,szu-si/UNIT,|SZU.BAD|/UNIT,kusz3/UNIT,gi/UNIT,ninda/UNIT,USZ/UNIT,danna/UNIT,tur/UNIT,ma-na/UNIT,sar/UNIT,GAN2/UNIT,iku/UNIT,sila3/UNIT,gur/UNIT,guru7/UNIT,dug/UNIT,gu2/UNIT' \
 			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
 		> $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
 
@@ -187,7 +187,7 @@ $(CORPUS_PREPARED_TESTING_CORPUS_FILE): \
 
 	cat $(CORPUS_TAGGED_TESTING_FILE) \
 		| python ./prepare.py \
-			--seed 'giri3/jiri,kiszib3/kiszib,mu-DU/muDU' \
+			--seed 'giri3/jiri,kiszib3/kiszib,mu-DU/muDU,iti/MON,u4/DAY,sze/UNIT,gin2/UNIT,szu-si/UNIT,|SZU.BAD|/UNIT,kusz3/UNIT,gi/UNIT,ninda/UNIT,USZ/UNIT,danna/UNIT,tur/UNIT,ma-na/UNIT,sar/UNIT,GAN2/UNIT,iku/UNIT,sila3/UNIT,gur/UNIT,guru7/UNIT,dug/UNIT,gu2/UNIT' \
 			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
 		> $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
 
@@ -309,6 +309,12 @@ $(CORPUS_BARETAGGED_FILE): $(CORPUS_LEMMA_FILE)
 		| sed -e '/^$$/d' \
 		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
 		> ./pos_frequency/mn.txt
+
+	cat ./cdli_months.txt >> ./pos_frequency/mn.txt
+
+	cat ./pos_frequency/mn.txt | sort | uniq \
+		>> temp
+	mv temp ./pos_frequency/mn.txt
 
 ./pos_frequency/mn_frequency.txt: ./pos_frequency/mn.txt
 
