@@ -25,6 +25,7 @@ CORPUS_BARETAGGED_FILE=./pos_frequency/cdli_atffull_bare.atf
 CORPUS_PREPARED_TRAINING_CORPUS_FILE=./cdli_atffull_training_prepared.atf
 CORPUS_PREPARED_TESTING_CORPUS_FILE=./cdli_atffull_testing_prepared.atf
 CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
+CORPUS_TAGFREQUNIQ_FILE=./cdli_atffull_tagfrequniq.txt
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 CORPUS_PREKNOWLEDGE_FILE=./preknowledge.txt
@@ -42,6 +43,7 @@ corpus:	\
 	$(CORPUS_PREPARED_TRAINING_CORPUS_FILE) \
 	$(CORPUS_PREPARED_TESTING_CORPUS_FILE) \
 	$(CORPUS_TAGFREQ_FILE) \
+	$(CORPUS_TAGFREQUNIQ_FILE) \
 	$(CORPUS_LINETAGFREQ_FILE) \
 	$(CORPUS_PATTERN_FILE)
 
@@ -130,6 +132,16 @@ $(CORPUS_TAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
                 | sed -e '/^$$/d' \
 		| sort | uniq -c | sort -rn \
 		> $(CORPUS_TAGFREQ_FILE)
+
+$(CORPUS_TAGFREQUNIQ_FILE): $(CORPUS_LEMMA_FILE)
+
+	./tag_corpus.py --nogloss --bestlemma --pf --bare \
+                | sed -e 's/ /\n/g' \
+                | sed -e '/^$$/d' \
+		| sort | uniq \
+		| awk 'BEGIN { FS="$$"; } { print FS $$2 FS; }' \
+		| sort | uniq -c | sort -rn \
+		> $(CORPUS_TAGFREQUNIQ_FILE)
 
 # From the lemmatized portion of the corpus, generate a frequency analysis
 # of lines reduced to their parts of speech.
@@ -477,6 +489,7 @@ clean:
 	rm -r $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
 	rm -r $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
 	rm -f $(CORPUS_TAGFREQ_FILE)
+	rm -f $(CORPUS_TAGFREQUNIQ_FILE)
 	rm -f $(CORPUS_LINETAGFREQ_FILE)
 	rm -f $(CORPUS_PATTERN_FILE)
 	rm -f $(CORPUS_PREKNOWLEDGE_FILE)
