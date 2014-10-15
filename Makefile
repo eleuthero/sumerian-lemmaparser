@@ -56,7 +56,7 @@ falsepositive: $(FALSEPOSITIVE_DIGESTFILE)
 		grep -B $(FALSEPOSITIVE_LINESBEFORE) \
 			-A $(FALSEPOSITIVE_LINESAFTER) \
 			--max-count 1 \
-			" $$line" $(CORPUS_TAGGED_FILE); \
+			" $$line" $(CORPUS_TAGGED_TESTING_FILE); \
 		echo "---------"; \
 		done \
 	< $(FALSEPOSITIVE_DIGESTFILE) \
