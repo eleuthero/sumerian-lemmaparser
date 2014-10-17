@@ -15,16 +15,20 @@ def init_parser():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--seed',
-                        type = str,
-                        default = '',
+                        type=str,
+                        default='',
                         help='Words used in seed rules to be marked as ' \
                              'their own parts of speech.')
 
     parser.add_argument('--preknowledge',
-                        type = str,
-                        default = None,
+                        type=str,
+                        default=None,
                         help='File containing words and their parts of ' \
                              'speech to be used as preknowledge.')
+
+    parser.add_argument('-o', '--omniscient',
+                        action='store_true',
+                        help='Include lemmatized part of speech in output.')
 
     return parser.parse_args()
 
@@ -54,7 +58,7 @@ def set_preknowlege(args):
                 for line in lines:
                     PREKNOWLEDGE.append( line.strip() )
 
-def process_token(token):
+def process_token(args, token):
     global SEED_WORDS
     global PREKNOWLEDGE
 
@@ -64,6 +68,11 @@ def process_token(token):
     # Start with the word itself.
 
     result = word
+
+    # If running in omniscient mode, give part of speech in output.
+
+    if args.omniscient:
+        result += '*%s*' % pos
 
     # Give ourselves all numbers as preknowledge.
 
@@ -110,7 +119,7 @@ def parse_mega_corpus(args):
                         # Determine whether to hide or show this token
                         # based on its POS.
 
-                        stdout.write( process_token(token) + ' ' )
+                        stdout.write( process_token(args, token) + ' ' )
 
                     else:
 
