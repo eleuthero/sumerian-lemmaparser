@@ -32,6 +32,10 @@ PATTERNS = [
            ]
 """
 
+TRUE_POSITIVE_PNS  = list()
+FALSE_POSITIVE_PNS = list()
+FALSE_NEGATIVE_PNS = list()
+
 def tokenizeLine(line):
     words = list()
     for word in line.split(' '):
@@ -82,7 +86,18 @@ def testRules(words):
 
     return None
 
+def accumulate(l, word, score):
+    if word in l:
+        return (0, 0, 0)  # PN already in this list; don't score it again
+    else:
+        l.append(word)    # Add PN to this list
+        return score
+   
 def verifyMatch(context, word):
+    global TRUE_POSITIVE_PNS
+    global FALSE_POSITIVE_PNS
+    global FALSE_NEGATIVE_PNS
+
     guess = '$PN$' in word
     truth = '*PN*' in word
 
@@ -91,17 +106,17 @@ def verifyMatch(context, word):
             """
             print 'TRUE POSITIVE: ', word
             """
-            return (1, 0, 0)
+            return accumulate( TRUE_POSITIVE_PNS, word, (1, 0, 0) )
         elif (guess):
             context = ' '.join(['<<<' + s + '>>>' if (s == word) else s \
                                 for s in context])
             stderr.write('FALSE POSITIVE: %s\n' % context.replace('\n', '::'))
-            return (0, 1, 0)
+            return accumulate( FALSE_POSITIVE_PNS, word, (0, 1, 0) )
         else:
             context = ' '.join(['>>>' + s + '<<<' if (s == word) else s \
                                 for s in context])
             stderr.write('FALSE NEGATIVE: %s\n' % context.replace('\n', '::'))
-            return (0, 0, 1)
+            return accumulate( FALSE_NEGATIVE_PNS, word, (0, 0, 1) )
     return (0, 0, 0)
 
 def printScore(score):
