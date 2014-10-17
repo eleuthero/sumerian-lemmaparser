@@ -16,12 +16,15 @@ CORPUS_FILE=./cdli_atffull.atf
 CORPUS_TRAINING_PERCENT=85
 CORPUS_RNGSEED=1
 
+CORPUS_SEEDWORDS='giri3/jiri,kiszib3/kiszib,mu-DU/muDU,iti/MON,u4/DAY,sze/UNIT,gin2/UNIT,szu-si/UNIT,|SZU.BAD|/UNIT,kusz3/UNIT,gi/UNIT,ninda/UNIT,USZ/UNIT,danna/UNIT,tur/UNIT,ma-na/UNIT,sar/UNIT,GAN2/UNIT,iku/UNIT,sila3/UNIT,gur/UNIT,guru7/UNIT,dug/UNIT,gu2/UNIT'
+
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_LEMMA_TRAINING_FILE=./cdli_atffull_training.atf
 CORPUS_LEMMA_TESTING_FILE=./cdli_atffull_testing.atf
 CORPUS_TAGGED_TRAINING_FILE=./cdli_atffull_training_tagged.atf
 CORPUS_TAGGED_TESTING_FILE=./cdli_atffull_testing_tagged.atf
 CORPUS_BARETAGGED_FILE=./pos_frequency/cdli_atffull_bare.atf
+CORPUS_PREPARED_BASELINE_CORPUS_FILE=./cdli_atffull_baseline_prepared.atf
 CORPUS_PREPARED_TRAINING_CORPUS_FILE=./cdli_atffull_training_prepared.atf
 CORPUS_PREPARED_TESTING_CORPUS_FILE=./cdli_atffull_testing_prepared.atf
 CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
@@ -33,16 +36,20 @@ CORPUS_PREKNOWLEDGE_FILE=./preknowledge.txt
 TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE=./training_pn_rn_dn.txt
 TRUEPOSITIVE_TESTING_PN_RN_DN_FILE=./testing_pn_rn_dn.txt
 
-FALSEPOSITIVE_SOURCEFILE=fp.txt
-FALSEPOSITIVE_DIGESTFILE=fp_digest.txt
+BASELINE_OUTPUT_FILE=./baseline_output.txt
+BASELINE_WHIFFS_FILE=./baseline_whiffs.txt
+
+FALSEPOSITIVE_SOURCEFILE=./fp.txt
+FALSEPOSITIVE_DIGESTFILE=./fp_digest.txt
 FALSEPOSITIVE_DIGEST_COUNT=50
 FALSEPOSITIVE_LINESBEFORE=3
 FALSEPOSITIVE_LINESAFTER=3
 FALSEPOSITIVE_OUTPUTDIGESTFILE=false_positive_digest.atf
 
-all: corpus falsepositive
+all: corpus falsepositive baseline
 
 corpus:	\
+	$(CORPUS_PREPARED_BASELINE_CORPUS_FILE) \
 	$(CORPUS_PREPARED_TRAINING_CORPUS_FILE) \
 	$(CORPUS_PREPARED_TESTING_CORPUS_FILE) \
 	$(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE) \
@@ -51,6 +58,8 @@ corpus:	\
 	$(CORPUS_TAGFREQUNIQ_FILE) \
 	$(CORPUS_LINETAGFREQ_FILE) \
 	$(CORPUS_PATTERN_FILE)
+
+# False positive digest generation
 
 falsepositive: $(FALSEPOSITIVE_DIGESTFILE)
 
@@ -82,6 +91,21 @@ $(FALSEPOSITIVE_DIGESTFILE): \
 		| awk 'BEGIN { FS="$$"; OFS="[$$]"; } { print $$1,$$2,"" }' \
 		> temp
 	mv temp $(FALSEPOSITIVE_DIGESTFILE)
+
+# Baseline generation
+
+baseline: $(BASELINE_OUTPUT_FILE) $(BASELINE_WHIFFS_FILE)
+
+$(BASELINE_OUTPUT_FILE): baseline_regenerate
+$(BASELINE_WHIFFS_FILE): baseline_regenerate
+
+baseline_regenerate: $(CORPUS_PREPARED_BASELINE_CORPUS_FILE)
+
+	cat $(CORPUS_PREPARED_BASELINE_CORPUS_FILE) \
+		| python baseline.py \
+		>  $(BASELINE_OUTPUT_FILE) \
+		2> $(BASELINE_WHIFFS_FILE)
+	tail -1 $(BASELINE_OUTPUT_FILE)
 
 # Fetch compressed CDLI Ur III corpus from source.
 
@@ -177,13 +201,32 @@ $(CORPUS_PATTERN_FILE): $(CORPUS_LEMMA_FILE)
 # From the tagged corpora and a preknowledge file, generate our final
 # prepared corpora.
 
+$(CORPUS_PREPARED_BASELINE_CORPUS_FILE): \
+	$(CORPUS_TAGGED_TRAINING_FILE) \
+	$(CORPUS_TAGGED_TESTING_FILE) \
+	$(CORPUS_PREKNOWLEDGE_FILE)
+
+	cat $(CORPUS_TAGGED_TRAINING_FILE) \
+		| python ./prepare.py \
+			--omniscient \
+			--seed $(CORPUS_SEEDWORDS) \
+			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
+		> $(CORPUS_PREPARED_BASELINE_CORPUS_FILE)
+
+	cat $(CORPUS_TAGGED_TESTING_FILE) \
+		| python ./prepare.py \
+			--omniscient \
+			--seed $(CORPUS_SEEDWORDS) \
+			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
+		>> $(CORPUS_PREPARED_BASELINE_CORPUS_FILE)
+
 $(CORPUS_PREPARED_TRAINING_CORPUS_FILE): \
 	$(CORPUS_TAGGED_TRAINING_FILE) \
 	$(CORPUS_PREKNOWLEDGE_FILE)
 
 	cat $(CORPUS_TAGGED_TRAINING_FILE) \
 		| python ./prepare.py \
-			--seed 'giri3/jiri,kiszib3/kiszib,mu-DU/muDU,iti/MON,u4/DAY,sze/UNIT,gin2/UNIT,szu-si/UNIT,|SZU.BAD|/UNIT,kusz3/UNIT,gi/UNIT,ninda/UNIT,USZ/UNIT,danna/UNIT,tur/UNIT,ma-na/UNIT,sar/UNIT,GAN2/UNIT,iku/UNIT,sila3/UNIT,gur/UNIT,guru7/UNIT,dug/UNIT,gu2/UNIT' \
+			--seed $(CORPUS_SEEDWORDS) \
 			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
 		> $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
 
@@ -193,7 +236,7 @@ $(CORPUS_PREPARED_TESTING_CORPUS_FILE): \
 
 	cat $(CORPUS_TAGGED_TESTING_FILE) \
 		| python ./prepare.py \
-			--seed 'giri3/jiri,kiszib3/kiszib,mu-DU/muDU,iti/MON,u4/DAY,sze/UNIT,gin2/UNIT,szu-si/UNIT,|SZU.BAD|/UNIT,kusz3/UNIT,gi/UNIT,ninda/UNIT,USZ/UNIT,danna/UNIT,tur/UNIT,ma-na/UNIT,sar/UNIT,GAN2/UNIT,iku/UNIT,sila3/UNIT,gur/UNIT,guru7/UNIT,dug/UNIT,gu2/UNIT' \
+			--seed $(CORPUS_SEEDWORDS) \
 			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
 		> $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
 
@@ -558,8 +601,9 @@ clean:
 	rm -f $(CORPUS_TAGGED_TRAINING_FILE)
 	rm -f $(CORPUS_TAGGED_TESTING_FILE)
 	rm -f $(CORPUS_BARETAGGED_FILE)
-	rm -r $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
-	rm -r $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
+	rm -f $(CORPUS_PREPARED_BASELINE_CORPUS_FILE)
+	rm -f $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
+	rm -f $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
 	rm -f $(CORPUS_TAGFREQ_FILE)
 	rm -f $(CORPUS_TAGFREQUNIQ_FILE)
 	rm -f $(CORPUS_LINETAGFREQ_FILE)
@@ -569,4 +613,6 @@ clean:
 	rm -f $(FALSEPOSITIVE_OUTPUTDIGESTFILE)
 	rm -f $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
 	rm -f $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
+	rm -f $(BASELINE_OUTPUT_FILE)
+	rm -f $(BASELINE_WHIFFS_FILE)
 	rm -rf ./pos_frequency
