@@ -5,14 +5,27 @@ import argparse
 import fileinput
 import operator
 import os.path
+import random
 from sys import stdout
 
 global SEED_WORDS 
 global PREKNOWLEDGE
+global LINES
 
 def init_parser():
 
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('-p', '--trainingpercent',
+                        type=int, default=100, choices=range(1, 101),
+                        help='Percent of qualifying tablets to include in '
+                             'generated corpus.')
+
+    parser.add_argument('-n', '--corporacount',
+                        type=int,
+                        default=1,
+                        help='Specifies number of training, testing, and ' \
+                             'baseline corpora sets to generate.')
 
     parser.add_argument('--seed',
                         type=str,
@@ -20,17 +33,27 @@ def init_parser():
                         help='Words used in seed rules to be marked as ' \
                              'their own parts of speech.')
 
+    parser.add_argument('--rngseed',
+                        type=int,
+                        default=None,
+                        help='Specifies random number generator seed to use.')
+
     parser.add_argument('--preknowledge',
                         type=str,
                         default=None,
                         help='File containing words and their parts of ' \
                              'speech to be used as preknowledge.')
 
+    """
     parser.add_argument('-o', '--omniscient',
                         action='store_true',
                         help='Include lemmatized part of speech in output.')
+    """
 
     return parser.parse_args()
+
+def set_rng_seed(args):
+    random.seed(args.rngseed)
 
 def set_seed_words(args):
     global SEED_WORDS
@@ -58,7 +81,14 @@ def set_preknowlege(args):
                 for line in lines:
                     PREKNOWLEDGE.append( line.strip() )
 
-def process_token(args, token):
+def readLines():
+    global LINES
+
+    LINES = list()
+    for line in fileinput.input('-'):
+        LINES.append(line)
+
+def process_token(args, token, baseline):
     global SEED_WORDS
     global PREKNOWLEDGE
 
@@ -69,14 +99,14 @@ def process_token(args, token):
 
     result = word
 
-    # If running in omniscient mode, give part of speech in output.
+    # If running in baseline mode, give part of speech in output.
 
-    if args.omniscient:
+    if baseline:
         result += '*%s*' % pos
 
-    # Give ourselves all numbers as preknowledge.
+    # Give ourselves all numbers and professions as preknowledge.
 
-    if 'n' == pos:
+    if pos in ('n', 'PF'):
         result += '$%s$' % pos 
 
     else:
@@ -101,41 +131,127 @@ def process_token(args, token):
 
     return result 
 
-def parse_mega_corpus(args):
+def get_filename(i, prefix, baseline):
+    return './prepared_corpora/%s%s_%i.txt' % \
+        (prefix,
+         '_baseline' if baseline else '',
+         i)
 
-    # Pass '-' to input() to make sure fileinput doesn't interpret
-    # our command-line switches as filenames.
+def update_output(output):
+    if args.trainingpercent > 0:
+        if args.trainingpercent < 100:
+            if random.randint(1, 100) < args.trainingpercent:
+                training = True
+            else:
+                training = False
+        else:
+            training = True
+    else:
+        training = False
 
-    for line in fileinput.input('-'):
-        line = line.strip() 
-        if len(line) > 0:
-            if not line[0] in '&$@#':
+    for u in output:
+        u['active'] = (training == u['training'])
 
-                # This is a line of source text.
+def print_output(args, output, token):
+    for u in output:
+        if u['active']:
+            if token.endswith('$'):
 
-                for token in line.split(' '):
-                    if token.endswith('$'):
+                # Determine whether to hide or show this token
+                # based on its POS.
 
-                        # Determine whether to hide or show this token
-                        # based on its POS.
-
-                        stdout.write( process_token(args, token) + ' ' )
-
-                    else:
-
-                        # This isn't a word we're interested in.
-                        # Pass it through.
-
-                        stdout.write(token + ' ')
-
-                stdout.write('\n')
-
+                u['handle'].write( process_token(args,
+                                                 token,
+                                                 u['baseline']) )
             else:
 
-                # This was a comment line; preserve it in the output.
+                # This isn't a word we're interested in.
+                # Pass it through.
 
-                stdout.write(line + '\n')
-        
+                u['handle'].write(token)
+
+def close_handles_output(output):
+    for u in output:
+        if u['handle']:
+            u['handle'].close()
+            u['handle'] = None
+
+def parse_mega_corpus(args):
+    global LINES
+
+    # File handles.
+
+    ftrain = None
+    ftest = None
+    fbase = None
+
+    # Generate corpora...
+
+    for i in range(1, args.corporacount + 1):
+
+        # Open file handles.
+
+        if args.trainingpercent > 0:
+            ftrain  = open(get_filename(i, 'training', False), 'w')
+            ftrainb = open(get_filename(i, 'training', True),  'w')
+
+        if args.trainingpercent < 100:
+            ftest   = open(get_filename(i, 'testing', False), 'w')
+            ftestb  = open(get_filename(i, 'testing', True),  'w')
+
+        output = [
+                    { 'handle':   ftrain,
+                      'active':   False,
+                      'training': True,
+                      'baseline': False },
+
+                    { 'handle':   ftrainb,
+                      'active':   False,
+                      'training': True,
+                      'baseline': True },      # Write *POS* tags.
+
+                    { 'handle':   ftest,
+                      'active':   False,
+                      'training': False,
+                      'baseline': False },
+
+                    { 'handle':   ftestb,
+                      'active':   False,
+                      'training': False,
+                      'baseline': True  } ]    # Write *POS* tags.
+
+        # Iterate over lines in the tagged corpus.
+
+        for line in LINES:
+            line = line.strip() 
+            if len(line) > 0:
+                if line.startswith('&P'):
+
+                    # This line is the start of a new tablet.
+                    # Decide which of the file handles we'll be writing to.
+
+                    update_output(output)
+
+                elif not line[0] in '&$@#':
+ 
+                    # This is a line of source text.
+
+                    for token in line.split(' '):
+                        print_output(args, output, token)
+                        print_output(args, output, ' ')
+
+                    print_output(args, output, '\n')
+
+                else:
+
+                    # This was a comment line; preserve it in the output.
+
+                    print_output(args, output, line + '\n')
+
+        # Close any open file handles.
+
+        close_handles_output(output)
+
 # ====
 # Main 
 # ====
@@ -143,4 +259,6 @@ def parse_mega_corpus(args):
 args = init_parser()
 set_seed_words(args)
 set_preknowlege(args)
+set_rng_seed(args)
+readLines()
 parse_mega_corpus(args)

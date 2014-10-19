@@ -14,30 +14,19 @@ CORPUS_FILE_URL= http://www.cdli.ucla.edu/tools/cdlifiles/$(CORPUS_FILE_ZIP)
 CORPUS_FILE=./cdli_atffull.atf
 
 CORPUS_TRAINING_PERCENT=85
-CORPUS_RNGSEED=1
+CORPUS_COUNT=10
 
 CORPUS_SEEDWORDS='giri3/jiri,kiszib3/kiszib,mu-DU/muDU,iti/MON,u4/DAY,sze/UNIT,gin2/UNIT,szu-si/UNIT,|SZU.BAD|/UNIT,kusz3/UNIT,gi/UNIT,ninda/UNIT,USZ/UNIT,danna/UNIT,tur/UNIT,ma-na/UNIT,sar/UNIT,GAN2/UNIT,iku/UNIT,sila3/UNIT,gur/UNIT,guru7/UNIT,dug/UNIT,gu2/UNIT'
 
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
-CORPUS_LEMMA_TRAINING_FILE=./cdli_atffull_training.atf
-CORPUS_LEMMA_TESTING_FILE=./cdli_atffull_testing.atf
-CORPUS_TAGGED_TRAINING_FILE=./cdli_atffull_training_tagged.atf
-CORPUS_TAGGED_TESTING_FILE=./cdli_atffull_testing_tagged.atf
+CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
+
 CORPUS_BARETAGGED_FILE=./pos_frequency/cdli_atffull_bare.atf
-CORPUS_PREPARED_BASELINE_CORPUS_FILE=./cdli_atffull_baseline_prepared.atf
-CORPUS_PREPARED_TRAINING_CORPUS_FILE=./cdli_atffull_training_prepared.atf
-CORPUS_PREPARED_TESTING_CORPUS_FILE=./cdli_atffull_testing_prepared.atf
 CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
 CORPUS_TAGFREQUNIQ_FILE=./cdli_atffull_tagfrequniq.txt
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
 CORPUS_PATTERN_FILE=./cdli_atffull_patterns.txt
 CORPUS_PREKNOWLEDGE_FILE=./preknowledge.txt
-
-TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE=./training_pn_rn_dn.txt
-TRUEPOSITIVE_TESTING_PN_RN_DN_FILE=./testing_pn_rn_dn.txt
-
-BASELINE_OUTPUT_FILE=./baseline_output.txt
-BASELINE_WHIFFS_FILE=./baseline_whiffs.txt
 
 FALSEPOSITIVE_SOURCEFILE=./fp.txt
 FALSEPOSITIVE_DIGESTFILE=./fp_digest.txt
@@ -46,66 +35,17 @@ FALSEPOSITIVE_LINESBEFORE=3
 FALSEPOSITIVE_LINESAFTER=3
 FALSEPOSITIVE_OUTPUTDIGESTFILE=false_positive_digest.atf
 
-all: corpus falsepositive baseline
+all: corpus falsepositive
+
+# Generate corpus
+# ===============
 
 corpus:	\
-	$(CORPUS_PREPARED_BASELINE_CORPUS_FILE) \
-	$(CORPUS_PREPARED_TRAINING_CORPUS_FILE) \
-	$(CORPUS_PREPARED_TESTING_CORPUS_FILE) \
-	$(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE) \
-	$(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE) \
+	PREPARE_CORPORA \
 	$(CORPUS_TAGFREQ_FILE) \
 	$(CORPUS_TAGFREQUNIQ_FILE) \
 	$(CORPUS_LINETAGFREQ_FILE) \
 	$(CORPUS_PATTERN_FILE)
-
-# False positive digest generation
-
-falsepositive: $(FALSEPOSITIVE_DIGESTFILE)
-
-	# Generate a digest of the contexts of a subset of the false
-	# positives.
-
-	while read -r line; do \
-		grep -B $(FALSEPOSITIVE_LINESBEFORE) \
-			-A $(FALSEPOSITIVE_LINESAFTER) \
-			--max-count 1 \
-			" $$line" $(CORPUS_TAGGED_TESTING_FILE); \
-		echo "---------"; \
-		done \
-	< $(FALSEPOSITIVE_DIGESTFILE) \
-	> $(FALSEPOSITIVE_OUTPUTDIGESTFILE)
-
-$(FALSEPOSITIVE_DIGESTFILE): \
-	$(FALSEPOSITIVE_SOURCEFILE)
-
-	cat $(FALSEPOSITIVE_SOURCEFILE) \
-		| python false_positive.py \
-		> $(FALSEPOSITIVE_DIGESTFILE)
-
-	shuf -n $(FALSEPOSITIVE_DIGEST_COUNT) $(FALSEPOSITIVE_DIGESTFILE) \
-		> temp
-	mv temp  $(FALSEPOSITIVE_DIGESTFILE)
-
-	cat $(FALSEPOSITIVE_DIGESTFILE) \
-		| awk 'BEGIN { FS="$$"; OFS="[$$]"; } { print $$1,$$2,"" }' \
-		> temp
-	mv temp $(FALSEPOSITIVE_DIGESTFILE)
-
-# Baseline generation
-
-baseline: $(BASELINE_OUTPUT_FILE) $(BASELINE_WHIFFS_FILE)
-
-$(BASELINE_OUTPUT_FILE): baseline_regenerate
-$(BASELINE_WHIFFS_FILE): baseline_regenerate
-
-baseline_regenerate: $(CORPUS_PREPARED_BASELINE_CORPUS_FILE)
-
-	cat $(CORPUS_PREPARED_BASELINE_CORPUS_FILE) \
-		| python baseline.py \
-		>  $(BASELINE_OUTPUT_FILE) \
-		2> $(BASELINE_WHIFFS_FILE)
-	tail -1 $(BASELINE_OUTPUT_FILE)
 
 # Fetch compressed CDLI Ur III corpus from source.
 
@@ -117,128 +57,127 @@ $(CORPUS_FILE_ZIP):
 # Uncompress CDLI corpus.
 
 $(CORPUS_FILE): $(CORPUS_FILE_ZIP)
+
 	if [ ! -f "$(CORPUS_FILE)" ]; then \
 		$(UNZIP) $(CORPUS_FILE_ZIP); \
 	fi
 
-# Separate corpus into lemmatized and unlemmatized portions.
+# Filter corpus to generate lemmatized portion.
 
 $(CORPUS_LEMMA_FILE): $(CORPUS_FILE)
 
-	./generate_corpus.py \
-		--lang sux \
-		--trainingpercent $(CORPUS_TRAINING_PERCENT) \
-		--lemmafile $(CORPUS_LEMMA_FILE) \
-		--trainingfile $(CORPUS_LEMMA_TRAINING_FILE) \
-		--testingfile $(CORPUS_LEMMA_TESTING_FILE) \
-		--seed $(CORPUS_RNGSEED)
+	cat $(CORPUS_FILE) \
+		| python ./generate_corpus.py \
+			--lang sux \
+		> $(CORPUS_LEMMA_FILE)
 
-# From the lemmatized portion of the corpus, generate a tagged corpus.
+# From the lemmatized corpus, generate a tagged corpus.
 
-$(CORPUS_TAGGED_TRAINING_FILE): \
-	$(CORPUS_LEMMA_FILE) $(CORPUS_LEMMA_TRAINING_FILE)
+$(CORPUS_TAGGED_FILE): $(CORPUS_LEMMA_FILE)
 
-	./tag_corpus.py --nogloss --bestlemma --pf \
-		--corpusfile $(CORPUS_LEMMA_TRAINING_FILE) \
-		> $(CORPUS_TAGGED_TRAINING_FILE)
+	cat $(CORPUS_LEMMA_FILE) \
+		| python ./tag_corpus.py \
+			--nogloss --bestlemma --pf \
+		> $(CORPUS_TAGGED_FILE)
 
-$(CORPUS_TAGGED_TESTING_FILE): \
-	$(CORPUS_LEMMA_FILE) $(CORPUS_LEMMA_TESTING_FILE)
-
-	./tag_corpus.py --nogloss --bestlemma --pf \
-		--corpusfile $(CORPUS_LEMMA_TESTING_FILE) \
-		> $(CORPUS_TAGGED_TESTING_FILE)
-
-# From the lemmatized portion of the corpus, generate a tag frequency
-# analysis.
-
-$(CORPUS_TAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
-
-	./tag_corpus.py \
-		--nogloss --bestlemma --pf --tagsonly --bare \
-		--corpusfile $(CORPUS_LEMMA_FILE) \
-                | sed -e 's/ /\n/g' \
-                | sed -e '/^$$/d' \
-		| sort | uniq -c | sort -rn \
-		> $(CORPUS_TAGFREQ_FILE)
-
-$(CORPUS_TAGFREQUNIQ_FILE): $(CORPUS_LEMMA_FILE)
-
-	./tag_corpus.py --nogloss --bestlemma --pf --bare \
-		--corpusfile $(CORPUS_LEMMA_FILE) \
-                | sed -e 's/ /\n/g' \
-                | sed -e '/^$$/d' \
-		| sort | uniq \
-		| awk 'BEGIN { FS="$$"; } { print FS $$2 FS; }' \
-		| sort | uniq -c | sort -rn \
-		> $(CORPUS_TAGFREQUNIQ_FILE)
-
-# From the lemmatized portion of the corpus, generate a frequency analysis
-# of lines reduced to their parts of speech.
-
-$(CORPUS_LINETAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
-
-	./tag_corpus.py \
-		--bestlemma --pf --tagsonly --bare \
-		--corpusfile $(CORPUS_LEMMA_FILE) \
-                | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
-		| sort | uniq -c | sort -rn \
-		> $(CORPUS_LINETAGFREQ_FILE)
-
-# From the lemmatized portion of the corpus, generate a frequency analysis
-# of which sentence patterns precede and succeed other sentence patterns.
-
-$(CORPUS_PATTERN_FILE): $(CORPUS_LEMMA_FILE)
-
-	./tag_corpus.py \
-		--bestlemma --pf --tagsonly \
-		--corpusfile $(CORPUS_LEMMA_FILE) \
-                | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
-		> $(CORPUS_PATTERN_FILE)
-	./patterns.py --threshold1 1000 --threshold2 100 > ./temp
-	mv ./temp $(CORPUS_PATTERN_FILE)
-
-# From the tagged corpora and a preknowledge file, generate our final
+# From the tagged corpus and a preknowledge file, generate our final
 # prepared corpora.
 
-$(CORPUS_PREPARED_BASELINE_CORPUS_FILE): \
-	$(CORPUS_TAGGED_TRAINING_FILE) \
-	$(CORPUS_TAGGED_TESTING_FILE) \
+./prepared_corpora:
+
+	mkdir --parents ./prepared_corpora
+
+PREPARE_CORPORA: \
+	./prepared_corpora \
+	$(CORPUS_TAGGED_FILE) \
 	$(CORPUS_PREKNOWLEDGE_FILE)
 
-	cat $(CORPUS_TAGGED_TRAINING_FILE) \
-		| python ./prepare.py \
-			--omniscient \
-			--seed $(CORPUS_SEEDWORDS) \
-			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
-		> $(CORPUS_PREPARED_BASELINE_CORPUS_FILE)
-
-	cat $(CORPUS_TAGGED_TESTING_FILE) \
-		| python ./prepare.py \
-			--omniscient \
-			--seed $(CORPUS_SEEDWORDS) \
-			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
-		>> $(CORPUS_PREPARED_BASELINE_CORPUS_FILE)
-
-$(CORPUS_PREPARED_TRAINING_CORPUS_FILE): \
-	$(CORPUS_TAGGED_TRAINING_FILE) \
-	$(CORPUS_PREKNOWLEDGE_FILE)
-
-	cat $(CORPUS_TAGGED_TRAINING_FILE) \
+	cat $(CORPUS_TAGGED_FILE) \
 		| python ./prepare.py \
 			--seed $(CORPUS_SEEDWORDS) \
-			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
-		> $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
+			--trainingpercent $(CORPUS_TRAINING_PERCENT) \
+			--corporacount $(CORPUS_COUNT) \
+			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE)
 
-$(CORPUS_PREPARED_TESTING_CORPUS_FILE): \
-	$(CORPUS_TAGGED_TESTING_FILE) \
-	$(CORPUS_PREKNOWLEDGE_FILE)
+        # Generate baselines.
 
-	cat $(CORPUS_TAGGED_TESTING_FILE) \
-		| python ./prepare.py \
-			--seed $(CORPUS_SEEDWORDS) \
-			--preknowledge $(CORPUS_PREKNOWLEDGE_FILE) \
-		> $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
+	cd ./prepared_corpora; \
+	for file in `ls baseline_prepared_*.txt`; \
+	do \
+		cat $$file \
+			| python ../baseline.py \
+			>  output_$$file \
+			2> whiffs_$$file; \
+	done
+
+	# Report on baseline true positives, false positives, and false
+	# negatives.
+
+	cd corpora; \
+	for file in `ls output.baseline_prepared_*.txt`; \
+	do \
+		tail -1 $$file; \
+	done
+
+	# Generate a list of PNs, RNs, and DNs in baseline files.
+        # The baseline file is the same as the testing file, except that
+        # it contains "hidden" parts of speech tags.
+
+	cd ./prepared_corpora; \
+	for fin in `ls training_baseline_*.txt`; \
+	do \
+		fout=pnrndn_$$fin; \
+        	cat $$fin \
+			| sed -e 's/ /\n/g' \
+			| grep '\*PN\*' \
+			| sed -e '/^$$/d' \
+			| awk 'BEGIN { FS="*"; } { print $$1; }' \
+			> $$fout; \
+		cat $$fin \
+			| sed -e 's/ /\n/g' \
+			| grep '\*RN\*' \
+			| sed -e '/^$$/d' \
+			| awk 'BEGIN { FS="*"; } { print $$1; }' \
+			>> $$fout; \
+		cat $$fin \
+			| sed -e 's/ /\n/g' \
+			| grep '\*DN\*' \
+			| sed -e '/^$$/d' \
+			| awk 'BEGIN { FS="*"; } { print $$1; }' \
+			>> $$fout; \
+        	cat $$fout \
+			| sort | uniq \
+			> temp; \
+		mv temp $$fout; \
+	done
+
+	cd ./prepared_corpora; \
+	for fin in `ls testing_baseline_*.txt`; \
+	do \
+		fout=pnrndn_$$fin; \
+        	cat $$fin \
+			| sed -e 's/ /\n/g' \
+			| grep '\*PN\*' \
+			| sed -e '/^$$/d' \
+			| awk 'BEGIN { FS="*"; } { print $$1; }' \
+			> $$fout; \
+		cat $$fin \
+			| sed -e 's/ /\n/g' \
+			| grep '\*RN\*' \
+			| sed -e '/^$$/d' \
+			| awk 'BEGIN { FS="*"; } { print $$1; }' \
+			>> $$fout; \
+		cat $$fin \
+			| sed -e 's/ /\n/g' \
+			| grep '\*DN\*' \
+			| sed -e '/^$$/d' \
+			| awk 'BEGIN { FS="*"; } { print $$1; }' \
+			>> $$fout; \
+        	cat $$fout \
+			| sort | uniq \
+			> temp; \
+		mv temp $$fout; \
+	done
 
 # Preknowledge
 # ============
@@ -301,9 +240,9 @@ $(CORPUS_PREKNOWLEDGE_FILE): \
 
 $(CORPUS_BARETAGGED_FILE): $(CORPUS_LEMMA_FILE)
 
-	./tag_corpus.py \
-		--nogloss --bestlemma --pf --bare \
-		--corpusfile $(CORPUS_LEMMA_FILE) \
+	cat $(CORPUS_LEMMA_FILE) \
+		| python ./tag_corpus.py \
+			--nogloss --bestlemma --pf --bare \
 		> $(CORPUS_BARETAGGED_FILE)
 
 # FN (field name) frequency analysis.
@@ -532,78 +471,100 @@ $(CORPUS_BARETAGGED_FILE): $(CORPUS_LEMMA_FILE)
 	sort -k2.1 ./pos_frequency/w_frequency.txt \
 		> ./pos_frequency/w_sorted.txt
 
-# Post-corpora partitioning
-# =========================
+# Secondary tag- and line-frequency analyses
+# ==========================================
+# From the lemmatized portion of the corpus, generate a tag frequency
+# analysis.
 
-$(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE): $(CORPUS_TAGGED_TRAINING_FILE)
+$(CORPUS_TAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
 
-	cat $(CORPUS_TAGGED_TRAINING_FILE) \
-		| sed -e 's/ /\n/g' \
-		| grep '\$$PN\$$' \
-		| sed -e '/^$$/d' \
-		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
-		> $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
+	cat $(CORPUS_LEMMA_FILE) \
+		| python ./tag_corpus.py \
+			--nogloss --bestlemma --pf --tagsonly --bare \
+                | sed -e 's/ /\n/g' \
+                | sed -e '/^$$/d' \
+		| sort | uniq -c | sort -rn \
+		> $(CORPUS_TAGFREQ_FILE)
 
-	cat $(CORPUS_TAGGED_TRAINING_FILE) \
-		| sed -e 's/ /\n/g' \
-		| grep '\$$RN\$$' \
-		| sed -e '/^$$/d' \
-		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
-		>> $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
+$(CORPUS_TAGFREQUNIQ_FILE): $(CORPUS_LEMMA_FILE)
 
-	cat $(CORPUS_TAGGED_TRAINING_FILE) \
-		| sed -e 's/ /\n/g' \
-		| grep '\$$DN\$$' \
-		| sed -e '/^$$/d' \
-		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
-		>> $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
-
-	cat $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE) \
+	cat $(CORPUS_LEMMA_FILE) \
+		| python ./tag_corpus.py \
+			--nogloss --bestlemma --pf --bare \
+                | sed -e 's/ /\n/g' \
+                | sed -e '/^$$/d' \
 		| sort | uniq \
+		| awk 'BEGIN { FS="$$"; } { print FS $$2 FS; }' \
+		| sort | uniq -c | sort -rn \
+		> $(CORPUS_TAGFREQUNIQ_FILE)
+
+# From the lemmatized portion of the corpus, generate a frequency analysis
+# of lines reduced to their parts of speech.
+
+$(CORPUS_LINETAGFREQ_FILE): $(CORPUS_LEMMA_FILE)
+
+	cat $(CORPUS_LEMMA_FILE) \
+		| python ./tag_corpus.py \
+			--bestlemma --pf --tagsonly --bare \
+                | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
+		| sort | uniq -c | sort -rn \
+		> $(CORPUS_LINETAGFREQ_FILE)
+
+# From the lemmatized portion of the corpus, generate a frequency analysis
+# of which sentence patterns precede and succeed other sentence patterns.
+
+$(CORPUS_PATTERN_FILE): $(CORPUS_LEMMA_FILE)
+
+	cat $(CORPUS_LEMMA_FILE) \
+		| python ./tag_corpus.py \
+			--bestlemma --pf --tagsonly \
+                | sed -e 's/\(\$$n\$$\)\( \1\)*/\1/g' \
+		> $(CORPUS_PATTERN_FILE)
+	./patterns.py --threshold1 1000 --threshold2 100 > ./temp
+	mv ./temp $(CORPUS_PATTERN_FILE)
+
+# False positive digest generation
+# ================================
+
+falsepositive: $(FALSEPOSITIVE_DIGESTFILE)
+
+	# Generate a digest of the contexts of a subset of the false
+	# positives.
+
+	while read -r line; do \
+		grep -B $(FALSEPOSITIVE_LINESBEFORE) \
+			-A $(FALSEPOSITIVE_LINESAFTER) \
+			--max-count 1 \
+			" $$line" $(CORPUS_TAGGED_TESTING_FILE); \
+		echo "---------"; \
+		done \
+	< $(FALSEPOSITIVE_DIGESTFILE) \
+	> $(FALSEPOSITIVE_OUTPUTDIGESTFILE)
+
+$(FALSEPOSITIVE_DIGESTFILE): \
+	$(FALSEPOSITIVE_SOURCEFILE)
+
+	cat $(FALSEPOSITIVE_SOURCEFILE) \
+		| python false_positive.py \
+		> $(FALSEPOSITIVE_DIGESTFILE)
+
+	shuf -n $(FALSEPOSITIVE_DIGEST_COUNT) $(FALSEPOSITIVE_DIGESTFILE) \
 		> temp
-	mv temp $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
+	mv temp  $(FALSEPOSITIVE_DIGESTFILE)
 
-$(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE): $(CORPUS_TAGGED_TESTING_FILE)
-
-	cat $(CORPUS_TAGGED_TESTING_FILE) \
-		| sed -e 's/ /\n/g' \
-		| grep '\$$PN\$$' \
-		| sed -e '/^$$/d' \
-		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
-		> $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
-
-	cat $(CORPUS_TAGGED_TESTING_FILE) \
-		| sed -e 's/ /\n/g' \
-		| grep '\$$RN\$$' \
-		| sed -e '/^$$/d' \
-		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
-		>> $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
-
-	cat $(CORPUS_TAGGED_TESTING_FILE) \
-		| sed -e 's/ /\n/g' \
-		| grep '\$$DN\$$' \
-		| sed -e '/^$$/d' \
-		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
-		>> $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
-
-	cat $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE) \
-		| sort | uniq \
+	cat $(FALSEPOSITIVE_DIGESTFILE) \
+		| awk 'BEGIN { FS="$$"; OFS="[$$]"; } { print $$1,$$2,"" }' \
 		> temp
-	mv temp $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
+	mv temp $(FALSEPOSITIVE_DIGESTFILE)
 
 # Cleanup
 # =======
 
 clean:
 	rm -f $(CORPUS_LEMMA_FILE)
-	rm -f $(CORPUS_LEMMA_TRAINING_FILE)
-	rm -f $(CORPUS_LEMMA_TESTING_FILE)
-	rm -f $(CORPUS_TAGGED_TRAINING_FILE)
-	rm -f $(CORPUS_TAGGED_TESTING_FILE)
+	rm -f $(CORPUS_TAGGED_FILE)
+	rm -rf ./prepared_corpora
 	rm -f $(CORPUS_BARETAGGED_FILE)
-	rm -f $(CORPUS_PREPARED_BASELINE_CORPUS_FILE)
-	rm -f $(CORPUS_PREPARED_TRAINING_CORPUS_FILE)
-	rm -f $(CORPUS_PREPARED_TESTING_CORPUS_FILE)
 	rm -f $(CORPUS_TAGFREQ_FILE)
 	rm -f $(CORPUS_TAGFREQUNIQ_FILE)
 	rm -f $(CORPUS_LINETAGFREQ_FILE)
@@ -611,8 +572,4 @@ clean:
 	rm -f $(CORPUS_PREKNOWLEDGE_FILE)
 	rm -f $(FALSEPOSITIVE_DIGESTFILE)
 	rm -f $(FALSEPOSITIVE_OUTPUTDIGESTFILE)
-	rm -f $(TRUEPOSITIVE_TRAINING_PN_RN_DN_FILE)
-	rm -f $(TRUEPOSITIVE_TESTING_PN_RN_DN_FILE)
-	rm -f $(BASELINE_OUTPUT_FILE)
-	rm -f $(BASELINE_WHIFFS_FILE)
 	rm -rf ./pos_frequency

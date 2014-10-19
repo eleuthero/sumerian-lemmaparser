@@ -4,8 +4,15 @@ import argparse
 import operator
 import random
 import re
+import fileinput
 from itertools import tee, izip
 from sys       import stdout
+
+# Lines read from input stream.
+# We'll be doing two passes over the input stream so we need to save
+# what we read.
+
+LINES = list()
 
 # Index dictionary mapping words to their attested parts of speech and
 # the count for each of those POS.  
@@ -124,10 +131,6 @@ def init_parser():
                         help='Include only POS tags in output; do not ' \
                              'include the source text.')
 
-    parser.add_argument('--corpusfile',
-                        default='./cdli_atffull_atf',
-                        help='Untagged corpus file to tag.')
-
     return parser.parse_args()
 
 # Funny pattern for iterating via a pair of elements.
@@ -213,33 +216,41 @@ class Line:
                     self.words[word].append(element)
                     # print '    %s => %s' % (word, element)
 
+def readLines():
+    global LINES
+
+    LINES = list()
+    for line in fileinput.input('-'):
+        LINES.append(line)
+
 def buildIndex():
-    with open('./cdli_atffull_lemma.atf') as fin:
-        for line1, line2 in pairwise(fin):
-            line1 = line1.strip()
-            line2 = line2.strip()
+    global LINES
 
-            # If we see a lemmatization ...
+    for line1, line2 in pairwise(LINES):
+        line1 = line1.strip()
+        line2 = line2.strip()
 
-            if line2.startswith('#lem:'):
-                line = Line(line1, line2[5:])
-                if line.valid:
-                    for word in line.words:
+        # If we see a lemmatization ...
 
-                        # Remove all transliteration noise first.
+        if line2.startswith('#lem:'):
+            line = Line(line1, line2[5:])
+            if line.valid:
+                for word in line.words:
 
-                        word = word.translate(None, noise)
+                    # Remove all transliteration noise first.
 
-                        if not word in index:
-                            index[word] = { }
+                    word = word.translate(None, noise)
 
-                        # Track lemma token count.
+                    if not word in index:
+                        index[word] = { }
 
-                        for token in line.words[word]:
-                            if token in index[word]:
-                                index[word][token] += 1
-                            else:
-                                index[word][token] = 1
+                    # Track lemma token count.
+
+                    for token in line.words[word]:
+                        if token in index[word]:
+                            index[word][token] += 1
+                        else:
+                            index[word][token] = 1
 
 def optimizeIndex(args):
 
@@ -439,51 +450,49 @@ def process(line, args):
     stdout.write('\n')
 
 def parse(args):
+    global LINES
 
-    lines = [ ]
+    for line1, line2 in pairwise(LINES):
+        line1 = line1.strip()
+        line2 = line2.strip()
 
-    with open(args.corpusfile) as fin:
-        for line1, line2 in pairwise(fin):
-            line1 = line1.strip()
-            line2 = line2.strip()
+        # Accumulate lines.
 
-            # Accumulate lines.
+        if line1.startswith('&'):
 
-            if line1.startswith('&'):
+            # Starting a new tablet.  Restart accumulated lines.
 
-                # Starting a new tablet.  Restart accumulated lines.
+            lines = list()
+            lines.append(line1)
 
-                lines = [ ]
-                lines.append(line1)
+        elif line1.startswith('#lem:'):
 
-            elif line1.startswith('#lem:'):
+            # Lemma.  We've already built the lemmata index; skip this.
 
-                # Lemma.  We've already built the lemmata index; skip this.
+            pass
 
-                pass
+        else:
+            lines.append(line1)
 
-            else:
-                lines.append(line1)
+        # End of tablet ?
 
-            # End of tablet ?
+        if line2.startswith('&'):
 
-            if line2.startswith('&'):
+            # Starting a new tablet.  Process accumulated lines.
 
-                # Starting a new tablet.  Process accumulated lines.
+            for line in lines:
+                process(line, args)
 
-                for line in lines:
-                    process(line, args)
+            # Restart accumulated lines.
 
-                # Restart accumulated lines.
-
-                lines = [ ]
+            lines = list()
 
 # ====
 # Main
 # ====
 
 args = init_parser()
-
+readLines()
 buildIndex()
 optimizeIndex(args)
 parse(args)
