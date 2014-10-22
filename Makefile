@@ -104,7 +104,7 @@ PREPARE_CORPORA: \
         # Generate baselines.
 
 	cd ./prepared_corpora; \
-	for file in `ls baseline_prepared_*.txt`; \
+	for file in `ls training_baseline_*.txt testing_baseline_*.txt`; \
 	do \
 		cat $$file \
 			| python ../baseline.py \
@@ -116,7 +116,7 @@ PREPARE_CORPORA: \
 	# negatives.
 
 	cd corpora; \
-	for file in `ls output.baseline_prepared_*.txt`; \
+	for file in `ls output_training_baseline_*.txt output_testing_baseline_*.txt`; \
 	do \
 		tail -1 $$file; \
 	done
