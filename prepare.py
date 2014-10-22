@@ -231,6 +231,7 @@ def parse_mega_corpus(args):
                     # Decide which of the file handles we'll be writing to.
 
                     update_output(output)
+                    print_output(args, output, line + '\n')
 
                 elif not line[0] in '&$@#':
  
