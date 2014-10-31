@@ -115,7 +115,7 @@ PREPARE_CORPORA: \
 	# Report on baseline true positives, false positives, and false
 	# negatives.
 
-	cd corpora; \
+	cd ./prepared_corpora; \
 	for file in `ls output_training_baseline_*.txt output_testing_baseline_*.txt`; \
 	do \
 		tail -1 $$file; \
