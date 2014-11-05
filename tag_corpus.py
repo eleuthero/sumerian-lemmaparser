@@ -72,6 +72,7 @@ professions = [
                 "kuruszda[fattener]",        # (of animals)
                 "kusz[official]",
                 "lugal[king]",
+                "lukur[priestess]",
                 "lungak[brewer]",
                 "malah[sailor]",
                 "maszkim[administrator]",
@@ -80,6 +81,7 @@ professions = [
                 "nagada[herdsman]",
                 "nagar[carpenter]",
                 "nar[musician]",
+                "nin[lady]",
                 "nubanda[overseer]",
                 "nukirik[horticulturalist]",
                 "sajDUN[recorder]",
@@ -91,10 +93,14 @@ professions = [
                 "szagia[cup-bearer]",
                 "szakkanak[general]",
                 "szej[cook]",
+                "szesz[brother]",
+                "szidim[builder]",
                 "szu'i[barber]",
                 "szukud[fisherman]",
+                "tibira[sculptor]",
                 "ugula[overseer]",
                 "unud[cowherd]",
+                "urin[guard]",
                 "ujjaja[porter]",
                 "uszbar[weaver]",
                 "zabardab[official]",
@@ -150,6 +156,21 @@ class Line:
         self.words = { }
         self.parse(line, lem)
 
+    def removeErasures(self, line):
+        start = line.find("!(")
+
+        # Obliterate any erased signs where they are specified; for instance,
+        # replace "ma-na!(KI)-ag2" with "ma-na!-ag2".  We'll deal with the
+        # remaining ! metacharater elsewhere.
+
+        while -1 != start:
+            end = line.find(")", start + 1)
+            if -1 != end:
+                line = line[:start + 1] + line[end + 1:]
+            start = line.find("!(")
+
+        return line;
+      
     def clean(self, line, lem):
 
         # Remove any independent comma tokens.
@@ -164,6 +185,10 @@ class Line:
         # Delete any implied signs <<...>>.
 
         line = re_impl.sub('', line)
+
+        # Remove any signs that were erased and corrected by the scribe.
+
+        line = self.removeErasures(line)
 
         """
         # Deal with slashes; they may be either " " or "-".
