@@ -71,6 +71,9 @@ def process(line):
                 processWord(tokens[1])
             else:
                 processWord(None)
+        elif 'wordexact' == verb:
+            if len(tokens) > 1:
+                processWordExact(tokens[1])
         elif 'line' == verb:
             processLine( ' '.join(tokens[1:]) )
         elif 'tablet' == verb:
@@ -118,6 +121,18 @@ def processWord(word):
     else:
         for attest in sorted(WORDS):
             renderWord(WORDS[attest])
+
+def processWordExact(word):
+    found = False
+
+    if word:
+        for w in sorted(WORDS):
+            attest = WORDS[w]
+            if w == word:
+                renderWord(attest)
+                found = True
+        if not found:
+            print "No lemmatized attestations of %s." % word
 
 def renderWord(attest):
     print "\t\t%s (%i lemmatized attestations)" % (attest.word, attest.count)
