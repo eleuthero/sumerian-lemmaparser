@@ -207,7 +207,8 @@ $(CORPUS_PREKNOWLEDGE_FILE): \
 	./pos_frequency/u_frequency.txt \
 	./pos_frequency/wn_frequency.txt \
 	./pos_frequency/w_frequency.txt \
-	./pos_frequency/x_frequency.txt
+	./pos_frequency/x_frequency.txt \
+	./pos_frequency/pf_frequency.txt
 
 	cat ./pos_frequency/fn_frequency.txt \
 		| head -50 \
@@ -455,6 +456,27 @@ $(CORPUS_BARETAGGED_FILE): $(CORPUS_LEMMA_FILE)
 	sort -k2.1 ./pos_frequency/x_frequency.txt \
 		> ./pos_frequency/x_sorted.txt
 
+./pos_frequency/pf.txt: $(CORPUS_BARETAGGED_FILE)
+
+	cat $(CORPUS_BARETAGGED_FILE) \
+		| sed -e 's/ /\n/g' \
+		| grep '\$$PF\$$' \
+		| sed -e '/^$$/d' \
+		| awk 'BEGIN { FS="$$"; } { print $$1; }' \
+		> ./pos_frequency/pf.txt
+
+./pos_frequency/pf_frequency.txt: ./pos_frequency/pf.txt
+
+	cat ./pos_frequency/pf.txt \
+		| sort | uniq -c | sort -rn \
+		> ./pos_frequency/pf_frequency.txt
+
+	sort -k2.1 ./pos_frequency/pf_frequency.txt \
+		> ./pos_frequency/pf_sorted.txt
+
+# all words frequency analysis.
+
+./pos_frequency/w.txt: $(CORPUS_BARETAGGED_FILE)
 # all words frequency analysis.
 
 ./pos_frequency/w.txt: $(CORPUS_BARETAGGED_FILE)
@@ -537,7 +559,7 @@ falsepositive: $(FALSEPOSITIVE_DIGESTFILE)
 		grep -B $(FALSEPOSITIVE_LINESBEFORE) \
 			-A $(FALSEPOSITIVE_LINESAFTER) \
 			--max-count 1 \
-			" $$line" $(CORPUS_TAGGED_TESTING_FILE); \
+			" $$line" $(CORPUS_TAGGED_FILE); \
 		echo "---------"; \
 		done \
 	< $(FALSEPOSITIVE_DIGESTFILE) \
