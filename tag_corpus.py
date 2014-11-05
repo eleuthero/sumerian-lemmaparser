@@ -382,11 +382,13 @@ def cleanWord(word):
     if ':' == word:
         return None
 
+    """
     # Replace : and . signs (indiciating sign metathesis) with the normal
     # hyphen sign separator.  This is not linguistically defensible, but
     # it's close enough for our immediate purposes.
 
     word = re.sub('[.:]', '-', word)
+    """
 
     return word
 
