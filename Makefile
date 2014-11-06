@@ -81,6 +81,9 @@ $(CORPUS_TAGGED_FILE): $(CORPUS_LEMMA_FILE)
 			--nogloss --bestlemma --pf \
 		> $(CORPUS_TAGGED_FILE)
 
+	python ./rmNoise.py $(CORPUS_TAGGED_FILE) temp
+	mv temp $(CORPUS_TAGGED_FILE)
+
 # From the tagged corpus and a preknowledge file, generate our final
 # prepared corpora.
 
