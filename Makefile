@@ -17,7 +17,7 @@ CORPUS_TRAINING_PERCENT=85
 CORPUS_COUNT=1
 CORPUS_RNGSEED=1
 
-CORPUS_SEEDWORDS='giri3/jiri,kiszib3/kiszib,mu-DU/muDU,iti/MON,u4/DAY,sze/UNIT,gin2/UNIT,szu-si/UNIT,|SZU.BAD|/UNIT,kusz3/UNIT,gi/UNIT,ninda/UNIT,USZ/UNIT,danna/UNIT,tur/UNIT,ma-na/UNIT,sar/UNIT,GAN2/UNIT,iku/UNIT,sila3/UNIT,gur/UNIT,guru7/UNIT,dug/UNIT,gu2/UNIT,mu/YER,ki/PLA,dumu/SON,i3-dab/TAK,zi-ga/TAK,szu/GIV,ba-ti/BATI'
+CORPUS_SEEDWORDS='giri3/jiri,kiszib3/kiszib,mu-DU/muDU,iti/MON,u4/DAY,sze/UNIT,gin2/UNIT,szu-si/UNIT,|SZU.BAD|/UNIT,kusz3/UNIT,gi/UNIT,ninda/UNIT,USZ/UNIT,danna/UNIT,tur/UNIT,ma-na/UNIT,sar/UNIT,GAN2/UNIT,iku/UNIT,sila3/UNIT,gur/UNIT,guru7/UNIT,dug/UNIT,gu2/UNIT,mu/YER,ki/PLC,dumu/SON,i3-dab5/TAK,zi-ga/TAK,szu/GIV,ba-ti/BATI'
 
 CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf

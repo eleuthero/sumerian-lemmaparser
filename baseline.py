@@ -21,7 +21,9 @@ PATTERNS = [
 
              ['$n$', '$UNIT$', None ],
              ['\n', '$jiri$', None ],
-             ['$n$', None, '\n']
+             ['$n$', None, '\n'],
+
+             ['\n', '$muDU$', None ]
            ]
 
 """

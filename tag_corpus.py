@@ -71,6 +71,7 @@ professions = [
                 "kinkin[miller]",
                 "kuruszda[fattener]",        # (of animals)
                 "kusz[official]",
+                "lu2-mar-sa-me[unknown]",
                 "lugal[king]",
                 "lukur[priestess]",
                 "lungak[brewer]",
@@ -185,6 +186,10 @@ class Line:
         # Delete any implied signs <<...>>.
 
         line = re_impl.sub('', line)
+
+        # Replace s, (Akkadian soft sz) with sz.
+
+        line = line.replace('s,', 'sz')
 
         # Remove any signs that were erased and corrected by the scribe.
 

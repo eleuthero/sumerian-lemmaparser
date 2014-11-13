@@ -12,6 +12,111 @@ import re
 out = open(sys.argv[2],'w')
 #out2 = open(sys.argv[3],'w')
 
+NAMES = ['a-da-ga$W$',
+         'szu-x-lum$u$',
+         'lugal-x-a$X$',
+         'bi-zag3$X$',
+         'du-uk-sza-szum$X$',
+         'ur-AN-x-x$u$',
+         'nin-gi16-sa-ni$X$',
+         'ha-bi2-ba-tum$X$',
+         'nu-ra-tum$X$',
+         'du6-lugal-x-tusz-a-ta$X$',
+         'mu-ni-ma-kal$X$',
+         'li-ha-mu-tar-re$X$',
+         'hu-ma-x-x$X$',
+         'a-du3-szu-x$X$',
+         'geme2-{d}a-x$X$',
+         'x-x-x$u$',
+         'nigir-ka-gi-na$X$',
+         'i-ti-esz18-dar$X$',
+         'sza-lim-tu-ri$X$',
+         'ba-ku-tum$X$',
+         'bi2-za-tum$X$',
+         'szu-sukkal$X$',
+         'ba-la-lum$X$',
+         'sza-at-x$X$',
+         'x-esz18-dar$X$',
+         'x-{d}suen$u$',
+         'A-gi$X$',
+         'szal2-mah$X$',
+         'a-mur-{d}suen-sze3$X$',
+         'nig2-mu-me-en-sze3$X$',
+         'i-x-sze3$X$',
+         'szu-x-sze3$X$',
+         'nu-ur2-zu-sze3$X$',
+         'en-kasz4$X$',
+         'iri-na-ka$X$',
+         '|PU3.SZA|-dingir$X$',
+         'en-za-gu$X$', 
+         'lu2-me-te-na$X$',
+         'bu-ku-usz$X$',
+         'nu-ur2-i3-li$X$',
+         'a-hi-lum$X$',
+         'geme2-szu-kin-x$u$',
+         'x-usz-kal-la$X$',
+         'PA-a-esz$X$',
+         'sa6-ga-im-ta-e3$X$',
+         'il3-szu-mu-da-ri6-iq$X$',
+         'dan-ni$X$',
+         'en-nig2-lul-la$X$',
+         'NI-du-ki$X$',
+         'ama-maszkim$X$',
+         'ti-nig2-ba$X$',
+         'ti-nig2-du10$X$',
+         'u4-he2-su3-e$X$',
+         'egir-szu-ba-ra-ad$X$',
+         'nig2-nin-mu-mu-tum3$X$',
+         'lu2-dingir-ra-kam$X$',
+         'a-da-ti-ni$X$',
+         'a-hi-ba-asz2-ti$X$',
+         'da-ra$W$',
+         'i-zu-ru-um$X$',
+         '|PU3.SZA|-ra$X$',
+         '|PU3.SZA|-da-gan$X$',
+         'e2-ta-bi$X$',
+         'tu-mi-na-a-u2$X$',
+         'ur-{u2}|ZI&ZI.LAGAB|-ba$X$',
+         'ma-al-lum$X$',
+         'lu2-TAG-X$u$',
+         'erim2-ze2-ze2-zi-na$X$',
+         'lugal-igi-x$X$',
+         'sza-lim-mi$X$',
+         'me-kab-ta$X$',
+         'mu-mu$W$',
+         'ri-GIN2-si-mu-sza3$X$',
+         'e2-dar-a$X$',
+         'hi-me-me-ti$X$',
+         'ba-ra-hu-ti$X$',
+         'geme2-{d}nin-lil2$X$',
+         'sza-lim-du-ri$X$',
+         'zi-ip-ni-tum$X$',
+         'im-ta-al-ku$X$',
+         'du-szu-du-um$X$', 
+         'szu-mi-id-dingir$X$',
+         'dumu-amar-i3-li2$X$',  
+         'in-x-x$u$',
+         'ar-bi2-x$X$',
+         'be-li2-tu-x$X$',
+         'be-ti-im-x$u$',
+         'me-{d}nin-x$X$',
+         'szu-bu-bu-um$x$',
+         'a-na-HI-kak-NI$X$',
+         '|PU3.SZA|-i3-li2$X$',
+         'lul-ki-du10-UR$X$',
+         'ba-ti-mu$W$',
+         'i-bu-ku-um$X$',
+         'zi2-na-na$X$',
+         'la-ma-sa6$X$',
+         'nimgir-kaa-gi-na-ke4$X$',
+         'sza-ra-at-ni-mu$X$',
+         'ba-sag10$W$',
+         'um-mi$X$',
+         'tu-mi-na-a-u2$X$',
+         'en3-mu-he2-tar-re$X$',
+         'i-bi2-esz18-dar$X$',
+         'HI-na-HAR$X$']
+
 # reading geographic names
 
 with open (sys.argv[1],'r') as infile:
@@ -30,6 +135,15 @@ for ln in lines:
 	
 	# Only tag the lines which start with <l>
 	if ln[:3] == '<l>':
+
+		for true_pn in NAMES:
+			if true_pn in ln:
+				# make a list of words and check the index:
+				ln_lst = ln.split();
+				for index, word in enumerate(ln_lst):
+					if word == true_pn:
+						ln_lst[index] = replaceX(ln_lst[index], '$PN$')
+				ln = ' '.join(ln_lst)
 
 		#Spelling rules
 		# Replace s,e-li- with sze-li-???						
@@ -114,9 +228,9 @@ for ln in lines:
 					if deter in word:
 						#if ln_lst[index][-3:] == '$X$' or ln_lst[index][-3:] == '$u$' or ln_lst[index][-3:] == '$x$':
 							#if '$' not in ln_lst[index]:
-							#non_name = replaceX(ln_lst[index], 'GEN')
+							#non_name = replaceX(ln_lst[index], 'HUM')
 							#out2.write(removeX(ln_lst[index])+'\n')
-						ln_lst[index] = replaceX(ln_lst[index], '$GEN$')
+						ln_lst[index] = replaceX(ln_lst[index], '$HUM$')
 				ln = ' '.join(ln_lst)
 		
 		
@@ -173,7 +287,7 @@ for ln in lines:
 					#if '-ta$' in ln_lst[index+1] and '$' not in ln_lst[index+1]:
 						#out.write(removeX(ln_lst[index+1])+'\n')
 					ln_lst[index+1] = replaceX(ln_lst[index+1], '$PN$')
-					ln_lst[index] = replaceX(ln_lst[index], '$PLA$')
+					ln_lst[index] = replaceX(ln_lst[index], '$PLC$')
 			ln = ' '.join(ln_lst)
 		
 		

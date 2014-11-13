@@ -104,9 +104,10 @@ def process_token(args, token, baseline):
     if baseline:
         result += '*%s*' % pos
 
-    # Give ourselves all numbers and professions as preknowledge.
+    # Give ourselves all numbers, professions, and trade goods
+    # as preknowledge.
 
-    if pos in ('n', 'PF'):
+    if pos in ('n', 'PF', 'TRD'):
         result += '$%s$' % pos 
 
     else:
