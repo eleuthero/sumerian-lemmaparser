@@ -23,6 +23,7 @@ CORPUS_LEMMA_FILE=./cdli_atffull_lemma.atf
 CORPUS_TAGGED_FILE=./cdli_atffull_tagged.atf
 
 CORPUS_BARETAGGED_FILE=./pos_frequency/cdli_atffull_bare.atf
+CORPUS_WORDTAGFREQ_FILE=./cdli_atffull_wordtagfreq.txt
 CORPUS_TAGFREQ_FILE=./cdli_atffull_tagfreq.txt
 CORPUS_TAGFREQUNIQ_FILE=./cdli_atffull_tagfrequniq.txt
 CORPUS_LINETAGFREQ_FILE=./cdli_atffull_linefreq.txt
@@ -79,6 +80,7 @@ $(CORPUS_TAGGED_FILE): $(CORPUS_LEMMA_FILE)
 	cat $(CORPUS_LEMMA_FILE) \
 		| python ./tag_corpus.py \
 			--nogloss --bestlemma --pf \
+			--dumpindex $(CORPUS_WORDTAGFREQ_FILE) \
 		> $(CORPUS_TAGGED_FILE)
 
 	python ./rmNoise.py $(CORPUS_TAGGED_FILE) temp
@@ -599,4 +601,5 @@ clean:
 	rm -f $(CORPUS_PREKNOWLEDGE_FILE)
 	rm -f $(FALSEPOSITIVE_DIGESTFILE)
 	rm -f $(FALSEPOSITIVE_OUTPUTDIGESTFILE)
+	rm -f $(CORPUS_WORDTAGFREQ_FILE)
 	rm -rf ./pos_frequency

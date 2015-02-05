@@ -6,7 +6,8 @@ import random
 import re
 import fileinput
 from itertools import tee, izip
-from sys       import stdout
+from sys import stdout
+from collections import Counter
 
 # Lines read from input stream.
 # We'll be doing two passes over the input stream so we need to save
@@ -132,6 +133,12 @@ def init_parser():
     parser.add_argument('--bare',
                         action='store_true',
                         help='Include only lemmatized lines in output.')
+
+    parser.add_argument('--dumpindex',
+                        type=str,
+                        default='',
+                        help='Writes a word/tag frequency matrix in CSV ' \
+                             'format to the specified filename')
 
     parser.add_argument('--tagsonly',
                         action='store_true',
@@ -281,6 +288,31 @@ def buildIndex():
                             index[word][token] += 1
                         else:
                             index[word][token] = 1
+
+def dumpIndex(args):
+    if args.dumpindex:
+
+        # Write the index to JSON format for use in other applications.
+
+        with open(args.dumpindex, 'w') as fout:
+            fout.write('{\n')
+            for word in sorted(index):
+                lemmata = dict( index[word] )
+                tags = Counter()
+
+                # If it's a lemma, such as "aga'us[soldier]", replace the
+                # lemma with our synthetic "W" pos tag.  Multiple lemmata
+                # can contribute to a single W-count.
+
+                for key in lemmata:
+                    if '[' in key or ']' in key:
+                        tags['W'] += lemmata[key]
+                    else:
+                        tags[key] += lemmata[key]
+                        
+                fout.write('\t"{}": {},\n'.format(word, dict(tags)))
+            fout.write('}\n')
+            fout.close()
 
 def optimizeIndex(args):
 
@@ -526,5 +558,9 @@ def parse(args):
 args = init_parser()
 readLines()
 buildIndex()
+
+if args.dumpindex:
+    dumpIndex(args)
+
 optimizeIndex(args)
 parse(args)
