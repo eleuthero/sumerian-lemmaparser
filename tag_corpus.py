@@ -130,6 +130,8 @@ def init_parser():
                         help='Replace common titles and professions with '
                              'PF part-of-speech tag.')
 
+<<<<<<< HEAD
+=======
     parser.add_argument('--bare',
                         action='store_true',
                         help='Include only lemmatized lines in output.')
@@ -140,10 +142,21 @@ def init_parser():
                         help='Writes a word/tag frequency matrix in CSV ' \
                              'format to the specified filename')
 
+>>>>>>> 74709c16289822cd64a2a2263fcf25639cd79281
     parser.add_argument('--tagsonly',
                         action='store_true',
                         help='Include only POS tags in output; do not ' \
                              'include the source text.')
+
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument('--bare',
+                       action='store_true',
+                       help='Include only lemmatized lines in output.')
+
+    group.add_argument('--simple',
+                       action='store_true',
+                       help='Include comments; delimit POS tags with slash.')
 
     return parser.parse_args()
 
@@ -378,7 +391,10 @@ def printWord(word, args):
             bestlem   = [ lem for lem in index[word] \
                               if bestcount == index[word][lem] ][0]
 
-            stdout.write( '$%s$ ' % formatLem(lem, args) )
+            if args.simple:
+                stdout.write( '/%s ' % formatLem(lem, args) )
+            else:
+                stdout.write( '$%s$ ' % formatLem(lem, args) )
 
         else:
 
@@ -390,14 +406,20 @@ def printWord(word, args):
                 tokens.append('%s:%i' % (formatLem(lem, args),    # lem
                                          index[word][lem]))       # count
 
-            stdout.write( '$%s$ ' % ','.join(tokens) )
+            if args.simple:
+                stdout.write( '/%s ' % ','.join(tokens) )
+            else:
+                stdout.write( '$%s$ ' % ','.join(tokens) )
 
     else:
 
         # Word is not lemmatized anywhere in corpus.
         # Mark with X tag to signify unknown part of speech.
 
-        stdout.write('$X$ ')
+        if args.simple:
+            stdout.write('/X ')
+        else:
+            stdout.write('$X$ ')
 
 def cleanWord(word):
 
@@ -472,7 +494,7 @@ def process(line, args):
         line = cleanLine(line)
 
         if line:
-            if not args.bare:
+            if not args.bare and not args.simple:
                 stdout.write('<l> ')
 
             """
@@ -501,17 +523,26 @@ def process(line, args):
                 if '$)' in word:
                     comment = False
 
-            if not args.bare:
+            if not args.bare and not args.simple:
                 stdout.write('</l>')
+
+            stdout.write('\n')
 
     else:
 
         # Entire line is a comment or directive.
 
-        if not args.bare:
+        if args.bare:
+            pass
+        elif args.simple:
+            if len(line) > 0 and line[0] in '&@':
+                if not line.startswith('@column'):
+                    stdout.write(line)
+                    stdout.write('\n')
+        else:
             stdout.write(line)
+            stdout.write('\n')
 
-    stdout.write('\n')
 
 def parse(args):
     global LINES
@@ -547,9 +578,14 @@ def parse(args):
             for line in lines:
                 process(line, args)
 
+            if len(lines) > 0:
+                if args.simple:
+                    stdout.write('\n')
+
             # Restart accumulated lines.
 
             lines = list()
+
 
 # ====
 # Main
